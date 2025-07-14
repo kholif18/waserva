@@ -1,0 +1,201 @@
+<section class="section">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title"><i class="bx bxl-whatsapp"></i> WhatsApp Message Tester</h5>
+
+            <!-- Default Tabs -->
+            <ul class="nav nav-tabs d-flex" id="myTabjustified" role="tablist">
+                <li class="nav-item flex-fill" role="presentation">
+                    <button class="nav-link w-100 active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-justified" type="button" role="tab" aria-controls="text" aria-selected="true"><i class="bx bxs-chat"></i> Text Message</button>
+                </li>
+                <li class="nav-item flex-fill" role="presentation">
+                    <button class="nav-link w-100" id="url-tab" data-bs-toggle="tab" data-bs-target="#url-justified" type="button" role="tab" aria-controls="url" aria-selected="false"><i class="bx bx-link"></i> File (URL)</button>
+                </li>
+                <li class="nav-item flex-fill" role="presentation">
+                    <button class="nav-link w-100" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-justified" type="button" role="tab" aria-controls="upload" aria-selected="false"><i class="bx bxs-cloud-upload"></i> File Upload</button>
+                </li>
+                <li class="nav-item flex-fill" role="presentation">
+                    <button class="nav-link w-100" id="grup-tab" data-bs-toggle="tab" data-bs-target="#grup-justified" type="button" role="tab" aria-controls="grup" aria-selected="false"><i class="bx bxs-group"></i> Send to Group</button>
+                </li>
+                <li class="nav-item flex-fill" role="presentation">
+                    <button class="nav-link w-100" id="bulk-tab" data-bs-toggle="tab" data-bs-target="#bulk-justified" type="button" role="tab" aria-controls="bulk" aria-selected="false"><i class="bx bxs-group"></i> Send to Multiple Numbers</button>
+                </li>
+            </ul>
+            <div class="tab-content pt-2" id="myTabjustifiedContent">
+                <div class="tab-pane fade show active" id="text-justified" role="tabpanel" aria-labelledby="text-tab">
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <form class="g-3">
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">WhatsApp Number</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bx bxs-phone"></i></span>
+                                        <input type="text" class="form-control" id="phone" name="phone" placeholder="081234567890" aria-label="Phone" autocomplete="tel" required autofocus>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="message" class="col-form-label">Message</label>
+                                    <textarea class="form-control" id="message" name="message" placeholder="Type your message here..." style="height: 150px" ></textarea>
+                                </div>
+                                <div class="d-grid gap-2 mt-3 text-center">
+                                    <button type="submit" class="btn btn-primary rounded-pill">Send Message</button>
+                                </div>
+                            </form><!-- End floating Labels Form -->
+                        </div>
+                        <div class="col-md-6 info-section">
+                            <div class="card-body">
+                                <strong>Informasi</strong>
+                                <ul class="text-sm mt-2">
+                                    <li>Gunakan untuk menguji pengiriman pesan langsung ke WhatsApp.</li>
+                                    <li>Nomor bisa diawali <code>0</code> atau <code>62</code>, sistem akan menyesuaikan.</li>
+                                    <li>Pastikan nomor aktif dan terhubung dengan WhatsApp.</li>
+                                    <li>Pesan akan dikirim dari akun WhatsApp Anda yang sedang login.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="url-justified" role="tabpanel" aria-labelledby="url-tab">
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <form class="g-3">
+                                <div class="mb-3">
+                                    <label for="url-phone" class="form-label">WhatsApp Number</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bx bxs-phone"></i></span>
+                                        <input type="text" class="form-control" id="url-phone" name="phone" placeholder="081234567890" aria-label="url-phone" autocomplete="tel" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="fileUrl" class="col-form-label">File URL</label>
+                                    <input class="form-control" type="url" id="fileUrl" name="file-url" placeholder="https://example.com/file.jpg">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="url-caption" class="col-form-label">File Caption</label>
+                                    <textarea class="form-control" id="url-caption" name="caption" placeholder="Description for the file..." style="height: 150px" ></textarea>
+                                </div>
+                                <div class="d-grid gap-2 mt-3 text-center">
+                                    <button type="submit" class="btn btn-primary rounded-pill">Send Message</button>
+                                </div>
+                            </form><!-- End floating Labels Form -->
+                        </div>
+                        <div class="col-md-6 info-section">
+                            <div class="card-body">
+                                <strong>Informasi</strong>
+                                <ul class="text-sm mt-2">
+                                    <li>Kirim file melalui URL langsung ke WhatsApp.</li>
+                                    <li>URL harus mengarah ke file yang valid (JPG, PNG, GIF, pdf, docx, xlsx, dll).</li>
+                                    <li>Caption bersifat opsional untuk memberikan deskripsi file.</li>
+                                    <li>Pastikan URL dapat diakses secara publik oleh sistem.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="upload-justified" role="tabpanel" aria-labelledby="upload-tab">
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <form class="g-3">
+                                <div class="mb-3">
+                                    <label for="upload-phone" class="form-label">WhatsApp Number</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bx bxs-phone"></i></span>
+                                        <input type="text" class="form-control" id="upload-phone" name="phone" placeholder="081234567890" aria-label="upload-phone" autocomplete="tel" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="fileUpload" class="col-form-label">File Upload</label>
+                                    <input class="form-control" type="file" id="fileUpload" name="file-upload">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="upload-caption" class="col-form-label">File Caption</label>
+                                    <textarea class="form-control" id="upload-caption" name="caption" placeholder="Description for the file..." style="height: 150px" ></textarea>
+                                </div>
+                                <div class="d-grid gap-2 mt-3 text-center">
+                                    <button type="submit" class="btn btn-primary rounded-pill">Send Message</button>
+                                </div>
+                            </form><!-- End floating Labels Form -->
+                        </div>
+                        <div class="col-md-6 info-section">
+                            <div class="card-body">
+                                <strong>Informasi</strong>
+                                <ul class="text-sm mt-2">
+                                    <li>Upload file dari perangkat Anda untuk dikirim ke WhatsApp.</li>
+                                    <li>Format yang didukung: jpg, png, gif, docx, xlsx, pdf, dll (maks. 50MB).</li>
+                                    <li>File akan diunggah ke server sebelum dikirim.</li>
+                                    <li>Caption bersifat opsional untuk memberikan deskripsi file.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="grup-justified" role="tabpanel" aria-labelledby="grup-tab">
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <form class="g-3">
+                                <div class="mb-3">
+                                    <label for="groupName" class="form-label">WhatsApp Number</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bx bxs-group"></i></span>
+                                        <input type="text" class="form-control" id="groupName" name="group-name" placeholder="Nama Grup WhatsApp" aria-label="groupName" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="groupMessage" class="col-form-label">Message</label>
+                                    <textarea class="form-control" id="groupMessage" name="message" placeholder="Type your message here..." style="height: 150px" ></textarea>
+                                </div>
+                                <div class="d-grid gap-2 mt-3 text-center">
+                                    <button type="submit" class="btn btn-primary rounded-pill">Send Message</button>
+                                </div>
+                            </form><!-- End floating Labels Form -->
+                        </div>
+                        <div class="col-md-6 info-section">
+                            <div class="card-body">
+                                <strong>Informasi</strong>
+                                <ul class="text-sm mt-2">
+                                    <li>Kirim pesan langsung ke grup WhatsApp.</li>
+                                    <li>Sesuaikan dengan nama grup, perhatikan huruf BESAR, kecil, angka dan simbol.</li>
+                                    <li>Pastikan bot/admin memiliki akses ke grup tersebut.</li>
+                                    <li>Pesan akan dikirim sebagai pengguna yang sedang login.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="bulk-justified" role="tabpanel" aria-labelledby="bulk-tab">
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <form class="g-3">
+                                <div class="mb-3">
+                                    <label for="phones" class="form-label">WhatsApp Number</label>
+                                    <textarea class="form-control" id="phones" name="phones" placeholder="081234567890, 08976543210" style="height: 150px" required></textarea>
+                                    <small>Contoh: 081234567890, 082345678901, ...</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="bulkMessage" class="col-form-label">Message</label>
+                                    <textarea class="form-control" id="bulkMessage" name="message" placeholder="Type your message here..." style="height: 150px" ></textarea>
+                                </div>
+                                <div class="d-grid gap-2 mt-3 text-center">
+                                    <button type="submit" class="btn btn-primary rounded-pill">Send Message</button>
+                                </div>
+                            </form><!-- End floating Labels Form -->
+                        </div>
+                        <div class="col-md-6 info-section">
+                            <div class="card-body">
+                                <strong>Informasi</strong>
+                                <ul class="text-sm mt-2">
+                                    <li>Kirim pesan yang sama ke banyak nomor sekaligus.</li>
+                                    <li>Pisahkan nomor dengan koma atau baris baru.</li>
+                                    <li>Nomor bisa diawali <code>0</code> atau <code>62</code>, sistem akan menyesuaikan.</li>
+                                    <li>Pastikan nomor aktif dan terhubung dengan WhatsApp.</li>
+                                    <li>Pesan akan dikirim dari akun WhatsApp Anda yang sedang login.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- End Default Tabs -->
+
+        </div>
+    </div>
+</section>

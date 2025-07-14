@@ -1,0 +1,46 @@
+<section class="section">
+    <div class="qr-container">
+        <h2 id="qr-title">Login WhatsApp</h2>
+        <p  id="qr-description">Scan QR Code untuk menghubungkan akun WhatsApp Anda</p>
+
+        <div class="row mb-4" id="qr-section">
+            <div class="col-12 col-md-6">
+                <div class="qr-box">
+                    <div class="qr-placeholder text-center p-4" id="qr-code-container">
+                        <!-- QR code akan muncul di sini -->
+                    </div>
+                    <p>QR Code akan diperbarui setiap 60 detik</p>
+                    <button id="refresh-qr" class="btn btn-success mt-2">
+                        <i class="bx bx-sync"></i> Generate New QR Code
+                    </button>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="qr-instructions">
+                    <h3>Petunjuk Penggunaan:</h3>
+                    <ol>
+                        <li>Buka aplikasi WhatsApp di ponsel Anda</li>
+                        <li>Klik menu titik tiga (⋮) di pojok kanan atas</li>
+                        <li>Pilih "Linked Devices"</li>
+                        <li>Klik "Link a Device"</li>
+                        <li>Arahkan kamera ponsel Anda ke QR Code di atas</li>
+                        <li>Tunggu hingga proses koneksi selesai</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="mt-4"></p><strong class="text-primary">Status Koneksi</strong></h4>
+                <p class="mt-4">Status: <span id="status-text" style="color: var(--bs-success); font-weight: bold;">Memeriksa status...</span></p>
+                <p id="last-connected" style="margin-top: 10px;"></p>
+            </div>
+            <!-- Form Logout WhatsApp -->
+            <div class="card-footer" id="whatsapp-logout" style="display: none;">
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i> Logout WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+</section>

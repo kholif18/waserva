@@ -1,0 +1,84 @@
+  <aside id="sidebar" class="sidebar">
+    <ul class="sidebar-nav" id="sidebar-nav">
+
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'dashboard' ? 'active' : 'collapsed' %>" href="/">
+          <i class="bx bx-grid-alt"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <%# End Dashboard Nav %>
+      
+      <li class="nav-heading">Whatspp</li>
+      
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'message' ? 'active' : 'collapsed' %>" href="/message">
+          <i class="bx bx-paper-plane"></i>
+          <span>Message</span>
+        </a>
+      </li>
+      <%# End Profile Page Nav %>
+
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'login-whatsapp' ? 'active' : 'collapsed' %>" href="/login-whatsapp">
+          <i class="bx bx-qr-scan"></i>
+          <span>Login Whatsapp</span>
+        </a>
+      </li>
+
+      <li class="nav-heading">Logs</li>
+
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'history' ? 'active' : 'collapsed' %>" href="/history">
+          <i class="ri ri-chat-history-line"></i>
+          <span>History</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'report' ? 'active' : 'collapsed' %>" href="#">
+          <i class="ri ri-line-chart-line"></i>
+          <span>Report</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'logs' ? 'active' : 'collapsed' %>" href="#">
+          <i class="bx bx-file"></i>
+          <span>Logs</span>
+        </a>
+      </li>
+
+      <li class="nav-heading">Settings</li>
+
+
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'profile' ? 'active' : 'collapsed' %>" href="#">
+          <i class="bx bx-user"></i>
+          <span>My Profile</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'api-client' ? 'active' : 'collapsed' %>" href="#">
+          <i class="bx bxs-key"></i>
+          <span>API Client</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'settings' ? 'active' : 'collapsed' %>" href="#">
+          <i class="bx bx-cog"></i>
+          <span>Settings</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'helps' ? 'active' : 'collapsed' %>" href="#">
+          <i class="bx bx-question-mark"></i>
+          <span>Hekps</span>
+        </a>
+      </li>
+    </ul>
+
+  </aside>
