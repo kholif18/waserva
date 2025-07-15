@@ -1090,6 +1090,294 @@ thead tr th {
   max-width: 60px;
 }
 
+/* Dashboard Stats */
+.status-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 15px;
+    border-radius: 12px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.status-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(40%, -40%);
+}
+
+.status-card .card-icon i {
+    font-size: 50px;
+    z-index: 1;
+}
+
+.status-card .card-value {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    z-index: 1;
+}
+
+.status-card .card-title {
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0;
+    color: white;
+    z-index: 1;
+}
+
+.status-card .card-badge {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 1;
+}
+
+.status-connected {
+    background: linear-gradient(135deg, var(--bs-primary), var(--bsprimary-dark));
+}
+
+.status-disconnected {
+    background: linear-gradient(135deg, var(--bs-danger), #c0392b);
+}
+
+.status-unknown {
+    background: linear-gradient(135deg, var(--bs-warning), #bda229);
+}
+
+.status-messages {
+    background: linear-gradient(135deg, var(--bs-info), #2980b9);
+}
+
+.status-stable {
+    background: linear-gradient(135deg, var(--bs-success), #055160);
+}
+
+.status-badge-connected {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.status-badge-disconnected {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.status-badge-unknown {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 25px;
+    border-radius: 12px;
+    background-color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    color: var(--dark);
+}
+
+.action-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn i {
+    font-size: 42px;
+    margin-bottom: 15px;
+    color: var(--bs-primary);
+}
+
+.action-btn .btn-title {
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.action-btn .btn-desc {
+    font-size: 14px;
+    color: var(--gray);
+}
+
+.last-message-card {
+    background-color: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.last-message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.last-message-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.last-message-time {
+    font-size: 14px;
+    color: var(--gray);
+}
+
+.message-container {
+    display: flex;
+    gap: 15px;
+}
+
+.message-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--bs-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.message-content {
+    flex: 1;
+    background-color: #f6f9ff;
+    border-radius: 12px;
+    padding: 15px;
+    position: relative;
+}
+
+.message-content:before {
+    content: "";
+    position: absolute;
+    top: 15px;
+    left: -10px;
+    width: 0;
+    height: 0;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-right: 10px solid #f0f2f5;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.message-sender {
+    font-weight: 600;
+}
+
+.message-time {
+    font-size: 12px;
+    color: var(--gray);
+}
+
+.message-text {
+    word-wrap: break-word;      /* Untuk memecah kata panjang */
+    overflow-wrap: break-word;  /* Dukungan tambahan */
+    white-space: normal;
+}
+
+.message-status {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-delivered {
+    background-color: rgba(46, 204, 113, 0.15);
+    color: var(--bs-success);
+}
+
+.status-pending {
+    background-color: rgba(243, 156, 18, 0.15);
+    color: var(--bs-warning);
+}
+
+
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 5px 0;
+    color: var(--bs-dark);
+}
+
+.stat-title {
+    font-size: 15px;
+    color: var(--bs-gray);
+}
+
+.copy-token {
+    cursor: pointer;
+    color: var(--bs-primary);
+    transition: color 0.3s;
+}
+.copy-token:hover {
+    color: #012970;
+}
+
 /*--------------------------------------------------------------
 # Icons list page
 --------------------------------------------------------------*/
@@ -1182,6 +1470,21 @@ thead tr th {
 .qr-instructions li {
     margin-bottom: 10px;
     line-height: 1.6;
+}
+
+
+pre code {
+    display: block;
+    background-color: #1e1e1e;
+    color: #ffffff;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 10px;
+    font-family: "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", monospace;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-x: auto;
 }
 
 /*--------------------------------------------------------------

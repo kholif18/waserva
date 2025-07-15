@@ -1,0 +1,81 @@
+<section>
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Message Report</div>
+        </div>
+        <div class="card-body">            
+            <div class="chart-container mb-4">
+                <div id="waChart"></div>
+            </div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% report.forEach((item, index) => { %>
+                            <tr>
+                                <td><%= item.datetime %></td>
+                                <td><%= item.count %></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+                <%- include('../partials/pagination', { pagination, req }) %>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const options = {
+                chart: {
+                    type: 'area',
+                    height: 350,
+                    zoom: { enabled: false },
+                },
+                series: [{
+                    name: "Jumlah Pesan",
+                    data: <%- JSON.stringify(report.map(item => parseInt(item.count))) %>
+                }],
+                xaxis: {
+                    categories: <%- JSON.stringify(report.map(item => item.datetime)) %>,
+                    title: { text: 'Tanggal & Waktu' }
+                },
+                yaxis: {
+                    title: { text: 'Jumlah Pesan' },
+                    labels: { formatter: (val) => parseInt(val) }
+                },
+                stroke: {
+                    curve: 'smooth',
+                    width: 2
+                },
+                colors: ['#00BFFF'],
+                fill: {
+                    type: "gradient",
+                    gradient: {
+                    shade: 'light',
+                    type: "vertical",
+                    shadeIntensity: 0.4,
+                    gradientToColors: ["#00BFFF"],
+                    inverseColors: false,
+                    opacityFrom: 0.7,
+                    opacityTo: 0.0,
+                    stops: [0, 90, 100]
+                    }
+                },
+                tooltip: {
+                    x: { format: 'dd MMM yyyy HH:mm' }
+                }
+                };
+
+            const chart = new ApexCharts(document.querySelector("#waChart"), options);
+            chart.render();
+        });
+    </script>
+
+
+</section>

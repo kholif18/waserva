@@ -2,7 +2,7 @@
     <div class="card">
         <div class="card-body">
             <h4 class="card-title">History</h4>
-            <div class="row mb-3">
+            <div class="row align-items-end mb-3">
                 <div class="col-md-2">
                     <label for="fromDate" class="form-label">From Date</label>
                     <input type="date" class="form-control" id="fromDate">
@@ -24,9 +24,13 @@
                     <label for="search" class="form-label">Search</label>
                     <input type="text" class="form-control" id="search" placeholder="Search...">
                 </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-primary"><i class="bx bx-filter-alt"></i> Apply</button>
-                    <button type="button" class="btn btn-secondary"><i class="bx bx-undo"></i> Reset</button>
+                <div class="col-md-3  d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bx bx-filter-alt"></i> Apply
+                    </button>
+                    <a href="/history" class="btn btn-secondary">
+                        <i class="bx bx-undo"></i> Reset
+                    </a>
                 </div>
             </div>
             <table class="table">
@@ -39,43 +43,18 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>14-07-2025 19:45</td>
-                        <td>081234567890</td>
-                        <td>Test Pesan</td>
-                        <td>success</td>
-                    </tr>
-                    <tr>
-                        <td>14-07-2025 19:45</td>
-                        <td>081234567890</td>
-                        <td>Pesan untuk tes WA GAteway</td>
-                        <td>success</td>
-                    </tr>
-                    <tr>
-                        <td>14-07-2025 19:45</td>
-                        <td>081234567890</td>
-                        <td>Pesan ini untuk ytest WA-Gateway di JavaScript</td>
-                        <td>success</td>
-                    </tr>
+                    <% history.forEach((item, index) => { %>
+                        <tr>
+                        <td><%= item.datetime %></td>
+                        <td><%= item.to %></td>
+                        <td><%= item.message %></td>
+                        <td><%= item.status %></td>
+                        </tr>
+                    <% }) %>
                 </tbody>
             </table>
-            <nav aria-label="Page navigation example">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item">
-                        <a class="page-link" href="#" aria-label="Previous">
-                        <span aria-hidden="true">«</span>
-                        </a>
-                    </li>
-                    <li class="page-item"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link" href="#">3</a></li>
-                    <li class="page-item">
-                        <a class="page-link" href="#" aria-label="Next">
-                        <span aria-hidden="true">»</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
+            <%- include('../partials/pagination', { pagination, req }) %>
+
         </div>
     </div>
 </section>

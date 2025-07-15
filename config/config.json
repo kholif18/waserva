@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "root",
+    "password": "r4hm4dNUR",
+    "database": "waserva_dev",
+    "host": "localhost",
+    "dialect": "mariadb"
+  },
+  "test": {
+    "username": "root",
+    "password": "r4hm4dNUR",
+    "database": "waserva_dev",
+    "host": "localhost",
+    "dialect": "mariadb"
+  },
+  "production": {
+    "username": "root",
+    "password": "r4hm4dNUR",
+    "database": "waserva_dev",
+    "host": "localhost",
+    "dialect": "mariadb"
+  }
+}

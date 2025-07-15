@@ -1,110 +1,99 @@
 <section class="section dashboard">
-    <div class="row">
-        <div class="col-xxl-4 col-md-6">
-            <div class="card info-card sales-card">
-
-                <div class="filter">
-                    <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                    <li class="dropdown-header text-start">
-                        <h6>Filter</h6>
-                    </li>
-
-                    <li><a class="dropdown-item" href="#">Today</a></li>
-                    <li><a class="dropdown-item" href="#">This Month</a></li>
-                    <li><a class="dropdown-item" href="#">This Year</a></li>
-                    </ul>
+    <div class="row mb-4">
+        <!-- Status Gateway Card -->
+        <div class="col-md-4 mb-3">
+            <div class="status-card status-unknown" id="gateway-status-card">
+                <div class="card-icon">
+                    <i class="bx bx-plug"></i>
                 </div>
-
-                <div class="card-body">
-                    <h5 class="card-title">Sales <span>| Today</span></h5>
-
-                    <div class="d-flex align-items-center">
-                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                        <i class="bi bi-cart"></i>
-                    </div>
-                    <div class="ps-3">
-                        <h6>145</h6>
-                        <span class="text-success small pt-1 fw-bold">12%</span> <span class="text-muted small pt-2 ps-1">increase</span>
-
-                    </div>
-                    </div>
+                <div class="card-value" id="gateway-status-text">Checking...</div>
+                <div class="card-title">Status Gateway</div>
+                <div class="card-badge status-badge-unknown" id="gateway-status-badge">
+                    <i class="bx bx-spin"></i> Checking...
                 </div>
-
             </div>
         </div>
 
-        <!-- Revenue Card -->
-        <div class="col-xxl-4 col-md-6">
-            <div class="card info-card revenue-card">
-
-            <div class="filter">
-                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                <li class="dropdown-header text-start">
-                    <h6>Filter</h6>
-                </li>
-
-                <li><a class="dropdown-item" href="#">Today</a></li>
-                <li><a class="dropdown-item" href="#">This Month</a></li>
-                <li><a class="dropdown-item" href="#">This Year</a></li>
-                </ul>
-            </div>
-
-            <div class="card-body">
-                <h5 class="card-title">Revenue <span>| This Month</span></h5>
-
-                <div class="d-flex align-items-center">
-                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                    <i class="bi bi-currency-dollar"></i>
+        <!-- Pesan Terkirim Hari Ini Card -->
+        <div class="col-md-4 mb-3">
+            <div class="status-card status-messages">
+                <div class="card-icon">
+                    <i class="bx bx-paper-plane"></i>
                 </div>
-                <div class="ps-3">
-                    <h6>$3,264</h6>
-                    <span class="text-success small pt-1 fw-bold">8%</span> <span class="text-muted small pt-2 ps-1">increase</span>
-
-                </div>
+                <div class="card-value">5</div>
+                <div class="card-title">Message sent today</div>
+                <div class="card-badge status-badge-unknown">
+                    <i class="bx bx-arrow-to-top"></i> 50%
                 </div>
             </div>
+        </div>
 
-            </div>
-        </div><!-- End Revenue Card -->
-
-        <!-- Customers Card -->
-        <div class="col-xxl-4 col-xl-12">
-
-            <div class="card info-card customers-card">
-
-            <div class="filter">
-                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                <li class="dropdown-header text-start">
-                    <h6>Filter</h6>
-                </li>
-
-                <li><a class="dropdown-item" href="#">Today</a></li>
-                <li><a class="dropdown-item" href="#">This Month</a></li>
-                <li><a class="dropdown-item" href="#">This Year</a></li>
-                </ul>
-            </div>
-
-            <div class="card-body">
-                <h5 class="card-title">Customers <span>| This Year</span></h5>
-
-                <div class="d-flex align-items-center">
-                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                    <i class="bi bi-people"></i>
+        <!-- Statistik Lainnya Card -->
+        <div class="col-md-4 mb-3">
+            <div class="status-card status-stable">
+                <div class="card-icon">
+                    <i class="bx bx-user-check"></i>
                 </div>
-                <div class="ps-3">
-                    <h6>1244</h6>
-                    <span class="text-danger small pt-1 fw-bold">12%</span> <span class="text-muted small pt-2 ps-1">decrease</span>
-
+                <div class="card-value">100%</div>
+                <div class="card-title">Success rate</div>
+                <div class="card-badge status-badge-connected">
+                    <i class="bx bx-check"></i> Stable
                 </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- Quick Actions -->
+    <div class="quick-actions mb-4">
+        <a href="/message" class="action-btn" data-page="send-message">
+            <i class="bx bx-paper-plane"></i>
+            <div class="btn-title">Send Message</div>
+            <div class="btn-desc">Test Send Message</div>
+        </a>
+        
+        <a href="/history" class="action-btn" data-page="history">
+            <i class="bx bx-history"></i>
+            <div class="btn-title">History</div>
+            <div class="btn-desc">Check History Send</div>
+        </a>
+        
+        <a href="/login-whatsapp" class="action-btn" data-page="contacts">
+            <i class="bx bx-qr-scan"></i>
+            <div class="btn-title">Status Device</div>
+            <div class="btn-desc">Check Status Device</div>
+        </a>
+        
+        <a href="/settings" class="action-btn" data-page="auto-reply">
+            <i class="bx bx-cog"></i>
+            <div class="btn-title">Settings</div>
+            <div class="btn-desc">Setting your WA Gateway</div>
+        </a>
+    </div>
+    
+    <!-- Last Message Card -->
+    <div class="last-message-card">
+        <div class="last-message-header">
+            <div class="last-message-title">Last Message</div>
+            <div class="last-message-time">17 Juli 2025, 19:00</div>
+        </div>
+        
+        <div class="message-container">
+            <div class="message-avatar">W</div>
+            <div class="message-content">
+                <div class="message-header">
+                    <div class="message-sender">Waserva</div>
+                    <div class="message-time">19:00</div>
+                </div>
+                <div class="message-text">
+                    Last message
                 </div>
 
+                <div class="message-status status-delivered">
+                    <i class="icon"></i> success
+                </div>
             </div>
-            </div>
-
-        </div><!-- End Customers Card -->
-
+        </div>
+        <div class="text-center">No messages have been sent yet.</div>
     </div>
 </section>
