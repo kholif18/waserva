@@ -6,8 +6,8 @@
             <div class="card-body profile-card pt-4 d-flex flex-column align-items-center">
 
                 <img src="assets/img/profile-img.jpg" alt="Profile" class="rounded-circle">
-                <h2>Kevin Anderson</h2>
-                <h3>username</h3>
+                <h2><%= user.name %></h2>
+                <h3><%= user.username %></h3>
             </div>
             </div>
 
@@ -18,77 +18,110 @@
             <div class="card">
                 <div class="card-body pt-3">
                     <!-- Profile Edit Form -->
-                    <form>
-                    <div class="row mb-3">
-                        <label for="profileImage" class="col-md-4 col-lg-3 col-form-label">Profile Image</label>
-                        <div class="col-md-8 col-lg-9">
-                        <img src="assets/img/profile-img.jpg" alt="Profile">
-                        <div class="pt-2">
-                            <a href="#" class="btn btn-primary btn-sm" title="Upload new profile image"><i class="bi bi-upload"></i></a>
-                            <a href="#" class="btn btn-danger btn-sm" title="Remove my profile image"><i class="bi bi-trash"></i></a>
+                    <form method="POST" action="/profile">
+                        <div class="row mb-3">
+                            <label for="profileImage" class="col-md-4 col-lg-3 col-form-label">Profile Image</label>
+                            <div class="col-md-8 col-lg-9">
+                            <img src="assets/img/profile-img.jpg" alt="Profile">
+                            <div class="pt-2">
+                                <a href="#" class="btn btn-primary btn-sm" title="Upload new profile image"><i class="bi bi-upload"></i></a>
+                                <a href="#" class="btn btn-danger btn-sm" title="Remove my profile image"><i class="bi bi-trash"></i></a>
+                            </div>
+                            </div>
                         </div>
-                        </div>
-                    </div>
 
-                    <div class="row mb-3">
-                        <label for="fullName" class="col-md-4 col-lg-3 col-form-label">Full Name</label>
-                        <div class="col-md-8 col-lg-9">
-                        <input name="fullName" type="text" class="form-control" id="fullName" value="Kevin Anderson">
+                        <div class="row mb-3">
+                            <label for="name" class="col-md-4 col-lg-3 col-form-label">Full Name</label>
+                            <div class="col-md-8 col-lg-9">
+                            <input name="name" type="text" class="form-control" id="name"  value="<%= user.name %>" required>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="row mb-3">
-                        <label for="userName" class="col-md-4 col-lg-3 col-form-label">Username</label>
-                        <div class="col-md-8 col-lg-9">
-                        <input name="userName" type="text" class="form-control" id="userName" value="kevinanderson">
+                        <div class="row mb-3">
+                            <label for="username" class="col-md-4 col-lg-3 col-form-label">Username</label>
+                            <div class="col-md-8 col-lg-9">
+                            <input name="username" type="text" class="form-control" id="username" value="<%= user.username %>">
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="row mb-3">
-                        <label for="Phone" class="col-md-4 col-lg-3 col-form-label">Phone</label>
-                        <div class="col-md-8 col-lg-9">
-                        <input name="phone" type="text" class="form-control" id="Phone" value="(436) 486-3538 x29071">
+                        <div class="row mb-3">
+                            <label for="Phone" class="col-md-4 col-lg-3 col-form-label">Phone</label>
+                            <div class="col-md-8 col-lg-9">
+                            <input name="phone" type="text" class="form-control" id="Phone" value="<%= user.phone || '' %>">
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="row mb-3">
-                        <label for="Email" class="col-md-4 col-lg-3 col-form-label">Email</label>
-                        <div class="col-md-8 col-lg-9">
-                        <input name="email" type="email" class="form-control" id="Email" value="k.anderson@example.com">
+                        <div class="row mb-3">
+                            <label for="Email" class="col-md-4 col-lg-3 col-form-label">Email</label>
+                            <div class="col-md-8 col-lg-9">
+                            <input name="email" type="email" class="form-control" id="Email" value="<%= user.email %>">
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="row mb-3">
-                        <label for="Address" class="col-md-4 col-lg-3 col-form-label">Address</label>
-                        <div class="col-md-8 col-lg-9">
-                        <input name="address" type="text" class="form-control" id="Address" value="A108 Adam Street, New York, NY 535022">
+                        <div class="row mb-3">
+                            <label for="Address" class="col-md-4 col-lg-3 col-form-label">Address</label>
+                            <div class="col-md-8 col-lg-9">
+                            <input name="address" type="text" class="form-control" id="Address" value="<%= user.address || '' %>">
+                            </div>
                         </div>
-                    </div>
 
-                    <small>Isi Password jika Anda ingin mengganti password saat ini</small>
-                    
-                    <div class="row mb-3">
-                        <label for="newPassword" class="col-md-4 col-lg-3 col-form-label">New Password</label>
-                        <div class="col-md-8 col-lg-9">
-                            <input name="newpassword" type="password" class="form-control" id="newPassword">
+                        <small>Isi Password jika Anda ingin mengganti password saat ini</small>
+                        
+                        <div class="row mb-3">
+                            <label for="newPassword" class="col-md-4 col-lg-3 col-form-label">New Password</label>
+                            <div class="col-md-8 col-lg-9">
+                                <input name="newpassword" type="password" class="form-control" id="newPassword">
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="row mb-3">
-                        <label for="renewPassword" class="col-md-4 col-lg-3 col-form-label">Re-enter New Password</label>
-                        <div class="col-md-8 col-lg-9">
-                            <input name="renewpassword" type="password" class="form-control" id="renewPassword">
+                        <div class="row mb-3">
+                            <label for="renewPassword" class="col-md-4 col-lg-3 col-form-label">Re-enter New Password</label>
+                            <div class="col-md-8 col-lg-9">
+                                <input name="renewpassword" type="password" class="form-control" id="renewPassword">
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                    </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
                     </form><!-- End Profile Edit Form -->
                 </div><!-- End Bordered Tabs -->
             </div>
         </div>
 
     </div>
-    </div>
+
+    <% if (Array.isArray(success) && success.length > 0) { %>
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+            <div class="toast align-items-center text-bg-success border-0 show" role="alert">
+                <div class="toast-header">Success</div>
+            <div class="d-flex">
+                <div class="toast-body"><%= success[0] %></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+            </div>
+        </div>
+    <% } %>
+
+    <% if (Array.isArray(error) && error.length > 0) { %>
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+            <div class="toast align-items-center text-bg-danger border-0 show" role="alert">
+                <div class="toast-header">Error</div>
+            <div class="d-flex">
+                <div class="toast-body"><%= error[0] %></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+            </div>
+        </div>
+    <% } %>
+
+    <script>
+    // Aktifkan semua toast saat halaman siap
+    document.addEventListener('DOMContentLoaded', function () {
+        const toastElList = [].slice.call(document.querySelectorAll('.toast'));
+        toastElList.map(function (toastEl) {
+        new bootstrap.Toast(toastEl).show();
+        });
+    });
+    </script>
 </section>

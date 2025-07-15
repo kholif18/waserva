@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const expressLayouts = require('express-ejs-layouts');
 const session = require('express-session');
 const app = express();
+const flash = require('connect-flash');
 
 const authRoutes = require('./routes/auth');
 const indexRoutes = require('./routes/index'); 
@@ -15,6 +16,16 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
 }));
+
+app.use(flash());
+// Global variable untuk EJS
+app.use((req, res, next) => {
+  const flashSuccess = req.flash('success');
+  const flashError = req.flash('error');
+  res.locals.success = Array.isArray(flashSuccess) ? flashSuccess : [];
+  res.locals.error = Array.isArray(flashError) ? flashError : [];
+  next();
+});
 
 // Middleware parsing form dan JSON
 app.use(express.urlencoded({

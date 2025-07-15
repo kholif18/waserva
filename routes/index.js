@@ -2,7 +2,11 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const authRoutes = require('./auth');
+const userRoutes = require('./user');
 // const { getQR } = require('../services/whatsapp');
+
+router.use('/', authRoutes);
+router.use('/', userRoutes);
 
 const report = [{
     datetime: '14-07-2025 19:45',
@@ -245,13 +249,6 @@ router.get('/logs', (req, res) => {
   res.render('pages/logs', {
     title: 'Logs',
     activePage: 'logs'
-  });
-});
-
-router.get('/profile', (req, res) => {
-  res.render('pages/profile', {
-    title: 'Profile',
-    activePage: 'profile'
   });
 });
 

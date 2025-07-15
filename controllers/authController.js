@@ -24,32 +24,44 @@ module.exports = {
             password
         } = req.body;
         try {
+            console.log('Register attempt:', {
+                name,
+                username,
+                email,
+                password
+            });
+
             const existingUser = await User.findOne({
                 where: {
                     username
                 }
             });
             if (existingUser) {
+                console.log('Username already exists:', username);
                 return res.status(400).send('Username sudah digunakan');
             }
 
             const hashedPassword = await bcrypt.hash(password, 10);
             const user = await User.create({
-                full_name: name,
+                name: name,
                 username,
                 email,
                 password: hashedPassword
             });
 
+            console.log('User created:', user.id);
+
             req.session.user = {
                 id: user.id,
                 username: user.username
             };
-            res.redirect('/dashboard');
+            res.redirect('/');
         } catch (err) {
+            console.error('Register error:', err);
             res.status(500).send('Gagal register');
         }
     },
+
 
     login: async (req, res) => {
         const {
@@ -71,7 +83,7 @@ module.exports = {
                 id: user.id,
                 username: user.username
             };
-            res.redirect('/dashboard');
+            res.redirect('/');
         } catch (err) {
             res.status(500).send('Login error');
         }
