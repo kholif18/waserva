@@ -5,32 +5,32 @@
             <form class="row g-3" method="POST" action="/settings/save">
                 <div class="col-6">
                     <label for="timeout" class="form-label">Delivery Timeout (seconds)</label>
-                    <input type="number" class="form-control" id="timeout" name="timeout" value="<%= settings.timeout %>" min="5" max="120">
+                    <input type="number" class="form-control" id="timeout" name="timeout" value="<%= settings.timeout %>" min="5" max="120" required>
                     <small><i>Maximum time to wait for a response when sending a message</i></small>
                 </div>
                 <div class="col-6">
                     <label for="max-retry" class="form-label">Maximum Retry Times</label>
-                    <input type="number" class="form-control" id="max-retry" name="max-retry" value="<%= settings.maxRetry %>" min="0" max="10">
+                    <input type="number" class="form-control" id="max-retry" name="max-retry" value="<%= settings.maxRetry %>" min="0" max="10" required>
                     <small><i>Number of retries if delivery fails</i></small>
                 </div>
                 <div class="col-6">
                     <label for="retry-interval" class="form-label">Retry Interval (seconds)</label>
-                    <input type="number" class="form-control" id="retry-interval" name="retry-interval" value="<%= settings.retryInterval %>" min="5" max="60">
+                    <input type="number" class="form-control" id="retry-interval" name="retry-interval" value="<%= settings.retryInterval %>" min="5" max="60" required>
                     <small><i>Waiting time between retries</i></small>
                 </div>
                 <div class="col-6">
                     <label for="max-queue" class="form-label">Maximum Messages in Queue</label>
-                    <input type="text" class="form-control" id="max-queue" name="max-queue" value="<%= settings.maxQueue %>" min="10" max="1000">
+                    <input type="number" class="form-control" id="max-queue" name="max-queue" value="<%= settings.maxQueue %>" min="10" max="1000" required>
                     <small><i>Maximum number of messages that can be queued</i></small>
                 </div>
                 <div class="col-6">
                     <label for="rate_limit_limit" class="form-label">Rate Limit (max requests)</label>
-                    <input type="number" class="form-control" id="rate_limit_limit" name="rate_limit_limit" value="<%= settings.rateLimitLimit %>" min="1" max="100">
+                    <input type="number" class="form-control" id="rate_limit_limit" name="rate_limit_limit" value="<%= settings.rateLimitLimit %>" min="1" max="100" required>
                     <small><i>The maximum number of API requests allowed in a given period.</i></small>
                 </div>
                 <div class="col-6">
                     <label for="rate_limit_decay" class="form-label">Rate Limit Decay (seconds)</label>
-                    <input type="text" class="form-control" id="rate_limit_decay" name="rate_limit_decay" value="<%= settings.rateLimitDecay %>" min="10" max="3600">
+                    <input type="number" class="form-control" id="rate_limit_decay" name="rate_limit_decay" value="<%= settings.rateLimitDecay %>" min="10" max="3600" required>
                     <small><i>Time period (in seconds) to reset the number of requests</i></small>
                 </div>
                 <div class="col-12">
@@ -45,12 +45,13 @@
                     <small><i>Select the default country code for phone number normalization</i></small>
                 </div>
                 <div class="text-center">
-                    <button type="submit" class="btn btn-primary"><i class="bx bx-save"></i> Save Chage</button>
-                    <button type="button" class="btn btn-secondary" onclick="location.reload();">
-                        <i class="bx bx-undo"></i> Reset Setting
+                    <button type="submit" class="btn btn-primary"><i class="bx bx-save"></i> Save Change</button>
+                    <button type="button" id="resetBtn" class="btn btn-secondary">
+                        <i class="bx bx-undo"></i> Reset to Default
                     </button>
                 </div>
             </form>
+            <form id="resetForm" action="/settings/reset" method="POST" style="display: none;"></form>
         </div>
     </div>
     <!-- Card Update Checker -->
@@ -70,7 +71,7 @@
 
     <% if (Array.isArray(success) && success.length > 0) { %>
         <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
-            <div class="toast align-items-center text-bg-success border-0" role="alert">
+            <div class="toast align-items-center text-bg-success border-0" role="alert" data-bs-delay="5000">
                 <div class="toast-header bg-success text-white">
                     <i class="bi bi-check-circle-fill me-2"></i>
                     <strong class="me-auto">Success</strong>
@@ -87,7 +88,7 @@
     <% console.log("ERROR DATA:", error) %>
     <% if (Array.isArray(error) && error.length > 0) { %>
         <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
-            <div class="toast align-items-center text-bg-danger border-0" role="alert">
+            <div class="toast align-items-center text-bg-danger border-0" role="alert" data-bs-delay="5000">
                 <div class="toast-header bg-danger text-white">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
                     <strong class="me-auto">Error</strong>
@@ -102,12 +103,29 @@
     <% } %>
 
     <script>
-    // Aktifkan semua toast saat halaman siap
         document.addEventListener('DOMContentLoaded', function () {
+            // Aktifkan semua toast
             const toastElList = [].slice.call(document.querySelectorAll('.toast'));
             toastElList.map(function (toastEl) {
-            new bootstrap.Toast(toastEl).show();
+                new bootstrap.Toast(toastEl).show();
+            });
+
+            // SweetAlert untuk tombol Reset
+            document.getElementById('resetBtn').addEventListener('click', function (e) {
+                Swal.fire({
+                    title: 'Reset Settings?',
+                    text: "This will revert all configuration to default values.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, reset it!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById('resetForm').submit();
+                    }
+                });
             });
         });
     </script>
+
 </section>

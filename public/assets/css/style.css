@@ -1454,6 +1454,13 @@ thead tr th {
   overflow: hidden;
 }
 
+.qr-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: all 0.3s ease-in-out;
+}
+
 .qr-instructions {
     text-align: left;
     background: #e8f5e9;

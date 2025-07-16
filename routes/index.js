@@ -1,13 +1,30 @@
 const express = require('express');
 const router = express.Router();
-const path = require('path');
+
 const authRoutes = require('./auth');
 const userRoutes = require('./user');
-// const { getQR } = require('../services/whatsapp');
+const apiClientRoutes = require('./apiClient');
+const apiWhatsappRoutes = require('./api/whatsapp');
+const webWhatsappRoutes = require('./whatsapp');
 
+const {
+  renderLoginWhatsApp
+} = require('../controllers/whatsappController');
+
+// 🔒 Authentication
 router.use('/', authRoutes);
+
+// 👤 User Panel
 router.use('/', userRoutes);
-router.use('/api-clients', require('./apiClient'));
+router.use('/api-clients', apiClientRoutes);
+router.use('/settings', require('./setting'));
+
+// 🔌 WhatsApp Web Integration
+router.get('/login-whatsapp', renderLoginWhatsApp);
+router.use('/wa', webWhatsappRoutes);
+
+// 🌐 Public API Endpoint (dengan API Token)
+router.use('/api/whatsapp', apiWhatsappRoutes);
 
 router.get('/', (req, res) => {
   res.render('pages/dashboard', {
@@ -23,14 +40,6 @@ router.get('/message', (req, res) => {
     title: 'Message Test',
     activePage: 'message',
     user: req.session.user
-  });
-});
-
-router.get('/login-whatsapp', (req, res) => {
-  res.render('pages/login-whatsapp', {
-    title: 'Login Whatsapp',
-    user: req.session.user,
-    activePage: 'login-whatsapp'
   });
 });
 
@@ -69,8 +78,6 @@ router.get('/report', async (req, res) => {
   const totalData = report.length;
   const isDataAvailable = report.length > 0;
   const totalPages = Math.ceil(report.length / perPage);
-
-  
 
   res.render('pages/report', {
     title: 'Message Report',

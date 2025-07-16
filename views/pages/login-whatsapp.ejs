@@ -1,37 +1,39 @@
 <section class="section">
     <div class="qr-container">
-        <h2 id="qr-title">Login WhatsApp</h2>
-        <p  id="qr-description">Scan QR Code untuk menghubungkan akun WhatsApp Anda</p>
+        <div id="qr-area">
+            <h2>Login WhatsApp</h2>
+            <p>Scan QR Code untuk menghubungkan akun WhatsApp Anda</p>
 
-        <div class="row mb-4" id="qr-section">
-            <div class="col-12 col-md-6">
-                <div class="qr-box">
-                    <div class="qr-placeholder text-center p-4" id="qr-code-container">
-                        <!-- QR code akan muncul di sini -->
+            <div class="row mb-4" id="qr-section">
+                <div class="col-12 col-md-6">
+                    <div class="qr-box">
+                        <div class="qr-placeholder text-center p-1" id="qr-code-container">
+                            <!-- QR code akan muncul di sini -->
+                        </div>
+                        <p>QR Code akan diperbarui setiap 60 detik</p>
+                        <button id="refresh-qr" class="btn btn-success mt-2">
+                            <i class="bx bx-sync"></i> Generate New QR Code
+                        </button>
                     </div>
-                    <p>QR Code akan diperbarui setiap 60 detik</p>
-                    <button id="refresh-qr" class="btn btn-success mt-2">
-                        <i class="bx bx-sync"></i> Generate New QR Code
-                    </button>
                 </div>
-            </div>
-            <div class="col-12 col-md-6">
-                <div class="qr-instructions">
-                    <h3>Petunjuk Penggunaan:</h3>
-                    <ol>
-                        <li>Buka aplikasi WhatsApp di ponsel Anda</li>
-                        <li>Klik menu titik tiga (⋮) di pojok kanan atas</li>
-                        <li>Pilih "Linked Devices"</li>
-                        <li>Klik "Link a Device"</li>
-                        <li>Arahkan kamera ponsel Anda ke QR Code di atas</li>
-                        <li>Tunggu hingga proses koneksi selesai</li>
-                    </ol>
+                <div class="col-12 col-md-6">
+                    <div class="qr-instructions">
+                        <h3>Petunjuk Penggunaan:</h3>
+                        <ol>
+                            <li>Buka aplikasi WhatsApp di ponsel Anda</li>
+                            <li>Klik menu titik tiga (⋮) di pojok kanan atas</li>
+                            <li>Pilih "Linked Devices"</li>
+                            <li>Klik "Link a Device"</li>
+                            <li>Arahkan kamera ponsel Anda ke QR Code di atas</li>
+                            <li>Tunggu hingga proses koneksi selesai</li>
+                        </ol>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="card">
             <div class="card-body">
-                <h5 class="mt-4"></p><strong class="text-primary">Status Koneksi</strong></h4>
+                <h5 class="mt-4"></p><strong class="text-primary">Connection status</strong></h4>
                 <p class="mt-4">Status: <span id="status-text" style="color: var(--bs-success); font-weight: bold;">Memeriksa status...</span></p>
                 <p id="last-connected" style="margin-top: 10px;"></p>
             </div>
@@ -43,4 +45,112 @@
             </div>
         </div>
     </div>
+
+    <script>
+        const sessionName = "<%= user?.username %>"; // atau ambil dari user / input
+
+        const socket = io({
+            query: { session: sessionName }
+        });
+
+        const qrContainer = document.getElementById('qr-code-container');
+        const statusText = document.getElementById('status-text');
+        const logoutButton = document.getElementById('whatsapp-logout');
+
+        function updateStatus(text, color = 'black') {
+            statusText.textContent = text;
+            statusText.style.color = color;
+        }
+
+        // 🔃 Otomatis mulai session saat halaman dimuat
+        async function autoStartSession() {
+            try {
+                const res = await fetch('/wa/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                console.log('Session start response:', data);
+            } catch (err) {
+                console.error('Gagal mulai sesi WhatsApp:', err);
+            }
+        }
+        
+        // ⏩ Jalankan saat halaman siap
+        window.addEventListener('DOMContentLoaded', () => {
+            autoStartSession(); // ⬅️ Ini penting!
+        });
+        
+        socket.on('connect', () => {
+            updateStatus("Terkoneksi ke server", 'green');
+        });
+
+        socket.on('session:update', (data) => {
+            const { status } = data;
+            updateStatus(status.toUpperCase(), status === 'connected' ? 'green' : 'orange');
+
+            const qrArea = document.getElementById('qr-area');
+            const lastConnectedEl = document.getElementById('last-connected');
+
+            if (status === 'connected') {
+                logoutButton.style.display = 'block';
+                if (qrArea) qrArea.style.display = 'none';
+
+                // Tampilkan waktu terakhir terkoneksi
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                }).replaceAll('/', '-');
+                const timeStr = now.toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                }).replace(/\./g, ':');
+                lastConnectedEl.textContent = `Last Connected: ${dateStr} ${timeStr}`;
+            } else {
+                logoutButton.style.display = 'none';
+                if (qrArea) qrArea.style.display = 'block';
+                lastConnectedEl.textContent = '';
+            }
+        });
+
+
+        socket.on('session:qr', (data) => {
+            qrContainer.innerHTML = `<img src="${data.qr}" alt="QR Code" class="img-fluid" />`;
+        });
+
+        document.getElementById('refresh-qr').addEventListener('click', async () => {
+            updateStatus("Meminta QR baru...", 'gray');
+            try {
+                const res = await fetch('/wa/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                updateStatus("QR diminta ulang...");
+            } catch (err) {
+                updateStatus("Gagal meminta QR baru", 'red');
+                console.error(err);
+            }
+        });
+
+        // Log Out
+        document.getElementById('logout-wa')?.addEventListener('click', async () => {
+            const res = await fetch(`/api/whatsapp/logout?session=${sessionName}`, {
+                credentials: 'include'
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('Berhasil logout WhatsApp');
+                location.reload();
+            } else {
+                alert('Gagal logout: ' + data.error);
+            }
+        });
+    </script>
+
 </section>

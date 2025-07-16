@@ -41,7 +41,11 @@
 
           <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
             <li class="dropdown-header">
-              <h6><%= shortName(user.name) %></h6>
+              <% if (user && user.name) { %>
+                <h6><%= shortName(user.name) %></h6>
+              <% } else { %>
+                <h6>Guest</h6>
+              <% } %>
               <small><%= user.username %></small>
             </li>
             <li>

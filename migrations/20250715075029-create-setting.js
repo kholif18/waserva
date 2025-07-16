@@ -10,24 +10,35 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       user_id: {
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
+        allowNull: false,
       },
       key: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        allowNull: false,
       },
       value: {
         type: Sequelize.TEXT
       },
-      createdAt: {
+      created_at: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       },
-      updatedAt: {
+      updated_at: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')
       }
     });
+
+    await queryInterface.addConstraint('Settings', {
+      fields: ['user_id', 'key'],
+      type: 'unique',
+      name: 'unique_userid_key'
+    });
   },
+
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable('Settings');
   }

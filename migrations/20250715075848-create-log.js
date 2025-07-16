@@ -10,30 +10,44 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       userId: {
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
+        allowNull: false
       },
-      level: {
-        type: Sequelize.STRING
+      sessionName: {
+        type: Sequelize.STRING,
+        allowNull: false
+      },
+      phone: {
+        type: Sequelize.STRING,
+        allowNull: true
       },
       message: {
-        type: Sequelize.TEXT
+        type: Sequelize.TEXT,
+        allowNull: false
       },
-      ip: {
-        type: Sequelize.STRING
+      type: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        defaultValue: 'text'
       },
-      userAgent: {
-        type: Sequelize.STRING
+      status: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        defaultValue: 'success'
       },
       createdAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       },
       updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       }
     });
   },
+
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable('Logs');
   }

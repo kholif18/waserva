@@ -103,7 +103,9 @@ module.exports = {
 
             req.session.user = {
                 id: user.id,
-                username: user.username
+                name: user.name,
+                username: user.username,
+                profile_image: user.profile_image
             };
             res.redirect('/');
         } catch (err) {

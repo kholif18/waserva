@@ -4,6 +4,7 @@ const {
     User
 } = require('../models');
 const crypto = require('crypto');
+const dayjs = require('dayjs');
 
 // Helper: convert app name to slug format
 function slugify(str) {
@@ -26,10 +27,20 @@ exports.index = async (req, res) => {
         // ⬇️ Ambil data user dari DB supaya lengkap
         const user = await User.findByPk(req.session.user.id);
 
+        const formattedClients = clients.map(client => {
+            return {
+                ...client.get({
+                    plain: true
+                }),
+                formattedCreatedAt: dayjs(client.createdAt).format('DD-MM-YYYY HH:mm'),
+                formattedUpdatedAt: dayjs(client.updatedAt).format('DD-MM-YYYY HH:mm'),
+            };
+        });
+
         res.render('pages/api-clients', {
             title: 'API Clients',
             user,
-            clients
+            clients: formattedClients
         });
     } catch (err) {
         console.error(err);
