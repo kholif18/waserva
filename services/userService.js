@@ -17,7 +17,8 @@ exports.updateUserProfile = async (id, data) => {
         phone,
         email,
         address,
-        newpassword
+        password,
+        profile_image
     } = data;
 
     const existing = await User.findOne({
@@ -39,12 +40,14 @@ exports.updateUserProfile = async (id, data) => {
         username,
         phone,
         email,
-        address
+        address,
+        profile_image
     };
-    if (newpassword) {
-        const bcrypt = require('bcryptjs');
-        updateData.password = await bcrypt.hash(newpassword, 10);
+    if (password) {
+        updateData.password = password;
     }
+
+    console.log('DATA YANG AKAN DIUPDATE:', updateData);
 
     const [updated] = await User.update(updateData, {
         where: {

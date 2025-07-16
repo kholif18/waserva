@@ -6,7 +6,9 @@ const {
 module.exports = {
     showLogin: (req, res) => {
         res.render('auth/login', {
-            layout: false
+            layout: false,
+            errors: {}, 
+            old: {}
         });
     },
 
@@ -74,10 +76,30 @@ module.exports = {
                     username
                 }
             });
-            if (!user) return res.status(400).send('User tidak ditemukan');
+            if (!user) {
+                return res.status(400).render('auth/login', {
+                    layout: false,
+                    errors: {
+                        username: 'Username tidak ditemukan'
+                    },
+                    old: {
+                        username
+                    }
+                });
+            }
 
             const valid = await bcrypt.compare(password, user.password);
-            if (!valid) return res.status(400).send('Password salah');
+            if (!valid) {
+                return res.status(400).render('auth/login', {
+                    layout: false,
+                    errors: {
+                        password: 'Password salah'
+                    },
+                    old: {
+                        username
+                    }
+                });
+            }
 
             req.session.user = {
                 id: user.id,

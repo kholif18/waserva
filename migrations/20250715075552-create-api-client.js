@@ -10,34 +10,49 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       userId: {
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
+        allowNull: false
       },
-      clientName: {
-        type: Sequelize.STRING
+      appName: {
+        type: Sequelize.STRING,
+        allowNull: false
       },
       sessionName: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        allowNull: true
       },
       apiToken: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        allowNull: false,
+        unique: true
       },
       createdBy: {
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
+        allowNull: false
       },
       isActive: {
-        type: Sequelize.BOOLEAN
+        type: Sequelize.BOOLEAN,
+        defaultValue: true
       },
       createdAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.fn('NOW')
       },
       updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.fn('NOW')
       }
+    });
+    await queryInterface.addConstraint('ApiClients', {
+      fields: ['userId', 'appName'],
+      type: 'unique',
+      name: 'unique_user_appname' // bebas, tapi wajib unik di seluruh DB
     });
   },
   async down(queryInterface, Sequelize) {
+    //await queryInterface.removeConstraint('ApiClients', 'unique_user_appname');
     await queryInterface.dropTable('ApiClients');
   }
 };

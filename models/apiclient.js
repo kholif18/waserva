@@ -14,15 +14,32 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   ApiClient.init({
-    userId: DataTypes.INTEGER,
-    clientName: DataTypes.STRING,
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    appName: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
     sessionName: DataTypes.STRING,
-    apiToken: DataTypes.STRING,
-    createdBy: DataTypes.INTEGER,
-    isActive: DataTypes.BOOLEAN
+    apiToken: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true
+    },
+    createdBy: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    }
   }, {
     sequelize,
     modelName: 'ApiClient',
   });
+
   return ApiClient;
 };

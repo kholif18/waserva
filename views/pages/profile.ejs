@@ -5,7 +5,7 @@
             <div class="card">
             <div class="card-body profile-card pt-4 d-flex flex-column align-items-center">
 
-                <img src="assets/img/profile-img.jpg" alt="Profile" class="rounded-circle">
+                <img src="<%= user.profile_image || '/assets/img/profile-img.jpg' %>" alt="Profile" class="rounded-circle">
                 <h2><%= user.name %></h2>
                 <h3><%= user.username %></h3>
             </div>
@@ -18,50 +18,58 @@
             <div class="card">
                 <div class="card-body pt-3">
                     <!-- Profile Edit Form -->
-                    <form method="POST" action="/profile">
+                    <form method="POST" action="/profile" enctype="multipart/form-data">
                         <div class="row mb-3">
-                            <label for="profileImage" class="col-md-4 col-lg-3 col-form-label">Profile Image</label>
+                            <label class="col-md-4 col-lg-3 col-form-label">Profile Image</label>
                             <div class="col-md-8 col-lg-9">
-                            <img src="assets/img/profile-img.jpg" alt="Profile">
-                            <div class="pt-2">
-                                <a href="#" class="btn btn-primary btn-sm" title="Upload new profile image"><i class="bi bi-upload"></i></a>
-                                <a href="#" class="btn btn-danger btn-sm" title="Remove my profile image"><i class="bi bi-trash"></i></a>
-                            </div>
+                                <img id="avatarPreview" src="<%= user.profile_image || '/assets/img/profile-img.jpg' %>" alt="Profile" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
+                                <input type="file" name="avatar" id="avatarInput" class="d-none" accept="image/*">
+
+                                <div class="pt-2">
+                                    <label for="avatarInput" class="btn btn-primary btn-sm" title="Upload new profile image">
+                                        <i class="bi bi-upload"></i>
+                                    </label>
+                                    <% if (user.profile_image) { %>
+                                        <button name="remove_avatar" value="1" class="btn btn-danger btn-sm" title="Remove my profile image">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    <% } %>
+                                </div>
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <label for="name" class="col-md-4 col-lg-3 col-form-label">Full Name</label>
                             <div class="col-md-8 col-lg-9">
-                            <input name="name" type="text" class="form-control" id="name"  value="<%= user.name %>" required>
+                            <input name="name" type="text" class="form-control" id="name"  value="<%= user.name %>" autocomplete="name" required>
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <label for="username" class="col-md-4 col-lg-3 col-form-label">Username</label>
                             <div class="col-md-8 col-lg-9">
-                            <input name="username" type="text" class="form-control" id="username" value="<%= user.username %>">
+                            <input name="username" type="text" class="form-control" id="username" value="<%= user.username %>" autocomplete="username" required>
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <label for="Phone" class="col-md-4 col-lg-3 col-form-label">Phone</label>
                             <div class="col-md-8 col-lg-9">
-                            <input name="phone" type="text" class="form-control" id="Phone" value="<%= user.phone || '' %>">
+                            <input name="phone" type="text" class="form-control" id="Phone" value="<%= user.phone || '' %>" autocomplete="tel" required>
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <label for="Email" class="col-md-4 col-lg-3 col-form-label">Email</label>
                             <div class="col-md-8 col-lg-9">
-                            <input name="email" type="email" class="form-control" id="Email" value="<%= user.email %>">
+                            <input name="email" type="email" class="form-control" id="Email" value="<%= user.email %>" autocomplete="email">
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <label for="Address" class="col-md-4 col-lg-3 col-form-label">Address</label>
                             <div class="col-md-8 col-lg-9">
-                            <input name="address" type="text" class="form-control" id="Address" value="<%= user.address || '' %>">
+                                <input name="address" type="text" class="form-control" id="Address" value="<%= user.address || '' %>" autocomplete="address">
                             </div>
                         </div>
 
@@ -70,14 +78,24 @@
                         <div class="row mb-3">
                             <label for="newPassword" class="col-md-4 col-lg-3 col-form-label">New Password</label>
                             <div class="col-md-8 col-lg-9">
-                                <input name="newpassword" type="password" class="form-control" id="newPassword">
+                                <div class="input-group">
+                                    <input name="newpassword" type="password" class="form-control" id="newPassword">
+                                    <button class="btn btn-outline-secondary toggle-password" type="button" data-target="#newPassword">
+                                        <i class="bi bi-eye-slash"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <label for="renewPassword" class="col-md-4 col-lg-3 col-form-label">Re-enter New Password</label>
                             <div class="col-md-8 col-lg-9">
-                                <input name="renewpassword" type="password" class="form-control" id="renewPassword">
+                                <div class="input-group">
+                                    <input name="renewpassword" type="password" class="form-control" id="renewPassword">
+                                    <button class="btn btn-outline-secondary toggle-password-status" type="button" data-target="#renewPassword">
+                                        <i class="bi bi-eye-slash" id="reenterPasswordIcon"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -88,40 +106,98 @@
                 </div><!-- End Bordered Tabs -->
             </div>
         </div>
-
     </div>
 
     <% if (Array.isArray(success) && success.length > 0) { %>
         <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
-            <div class="toast align-items-center text-bg-success border-0 show" role="alert">
-                <div class="toast-header">Success</div>
-            <div class="d-flex">
-                <div class="toast-body"><%= success[0] %></div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
+            <div class="toast align-items-center text-bg-success border-0" role="alert">
+                <div class="toast-header bg-success text-white">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <strong class="me-auto">Success</strong>
+                    <small>Just now</small>
+                    <button type="button" class="btn-close btn-close-white ms-2 mb-1" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    <%= success[0] %>
+                </div>
             </div>
         </div>
     <% } %>
-
+    
+    <% console.log("ERROR DATA:", error) %>
     <% if (Array.isArray(error) && error.length > 0) { %>
         <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
-            <div class="toast align-items-center text-bg-danger border-0 show" role="alert">
-                <div class="toast-header">Error</div>
-            <div class="d-flex">
-                <div class="toast-body"><%= error[0] %></div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
+            <div class="toast align-items-center text-bg-danger border-0" role="alert">
+                <div class="toast-header bg-danger text-white">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong class="me-auto">Error</strong>
+                    <small>Just now</small>
+                    <button type="button" class="btn-close btn-close-white ms-2 mb-1" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    <%= error[0] %>
+                </div>
             </div>
         </div>
     <% } %>
 
+
     <script>
-    // Aktifkan semua toast saat halaman siap
-    document.addEventListener('DOMContentLoaded', function () {
-        const toastElList = [].slice.call(document.querySelectorAll('.toast'));
-        toastElList.map(function (toastEl) {
-        new bootstrap.Toast(toastEl).show();
+        document.getElementById('avatarInput')?.addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('avatarPreview').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
         });
-    });
+        
+        document.querySelectorAll('.toggle-password').forEach(btn => {
+            btn.addEventListener('click', function () {
+            const input = document.querySelector(this.dataset.target);
+            const icon = this.querySelector('i');
+            input.type = input.type === 'password' ? 'text' : 'password';
+            icon.classList.toggle('bi-eye');
+            icon.classList.toggle('bi-eye-slash');
+            });
+        });
+
+        // Validasi realtime
+        const newPassword = document.getElementById('newPassword');
+        const renewPassword = document.getElementById('renewPassword');
+        const toggleBtn = document.querySelector('.toggle-password-status');
+        const icon = document.getElementById('reenterPasswordIcon');
+
+        // Toggle show/hide password
+        toggleBtn.addEventListener('click', function () {
+            const target = document.querySelector(this.dataset.target);
+            target.type = target.type === 'password' ? 'text' : 'password';
+        });
+
+        // Real-time password match check
+        function updateIconStatus() {
+            if (!renewPassword.value) {
+            icon.className = 'bi bi-eye-slash';
+            return;
+            }
+
+            if (newPassword.value === renewPassword.value) {
+            icon.className = 'bi bi-check-circle-fill text-success'; // ✅ cocok
+            } else {
+            icon.className = 'bi bi-x-circle-fill text-danger'; // ❌ tidak cocok
+            }
+        }
+
+        newPassword.addEventListener('input', updateIconStatus);
+        renewPassword.addEventListener('input', updateIconStatus);
+        // Aktifkan semua toast saat halaman siap
+        document.addEventListener('DOMContentLoaded', function () {
+            const toastElList = [].slice.call(document.querySelectorAll('.toast'));
+            toastElList.map(function (toastEl) {
+            new bootstrap.Toast(toastEl).show();
+            });
+        });
     </script>
 </section>
