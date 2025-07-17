@@ -2,6 +2,7 @@ const {
     Setting,
     User
 } = require('../models');
+const logService = require('../services/logService');
 
 // helper ambil value setting
 async function getSetting(userId, key, defaultValue = '') {
@@ -66,6 +67,12 @@ exports.save = async (req, res) => {
         }
 
         req.flash('success', 'Settings updated successfully.');
+
+        await logService.createLog({
+            userId,
+            level: 'INFO',
+            message: 'User updated their system settings.'
+        });
     }
     catch (error) {
         req.flash('error', error.message || 'Failed to update settings.');
@@ -98,6 +105,12 @@ exports.reset = async (req, res) => {
         }
 
         req.flash('success', 'Settings have been reset to default.');
+
+        await logService.createLog({
+            userId,
+            level: 'INFO',
+            message: 'User reset settings to default.'
+        });
     } catch (err) {
         console.error(err);
         req.flash('error', 'Failed to reset settings.');

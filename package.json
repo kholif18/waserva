@@ -34,5 +34,8 @@
     "puppeteer": "npm:puppeteer-core@24.13.0",
     "tar-fs": "^3.0.0",
     "ws": "^8.17.1"
+  },
+  "devDependencies": {
+    "sequelize-cli": "^6.6.3"
   }
 }

@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const isAuthenticated = require('../middlewares/isAuthenticated');
 const multer = require('multer');
 const path = require('path');
 
@@ -20,8 +19,8 @@ const upload = multer({
     }
 });
 
-router.get('/profile', isAuthenticated, userController.getMyProfile);
-router.post('/profile', upload.single('avatar'), isAuthenticated, userController.updateMyProfile);
+router.get('/profile', userController.getMyProfile);
+router.post('/profile', upload.single('avatar'), userController.updateMyProfile);
 
 
 module.exports = router;

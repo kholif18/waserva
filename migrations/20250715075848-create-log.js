@@ -1,5 +1,4 @@
 'use strict';
-/** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('Logs', {
@@ -13,27 +12,14 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false
       },
-      sessionName: {
+      level: {
         type: Sequelize.STRING,
-        allowNull: false
-      },
-      phone: {
-        type: Sequelize.STRING,
-        allowNull: true
+        allowNull: false,
+        defaultValue: 'INFO'
       },
       message: {
         type: Sequelize.TEXT,
         allowNull: false
-      },
-      type: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        defaultValue: 'text'
-      },
-      status: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        defaultValue: 'success'
       },
       createdAt: {
         allowNull: false,
@@ -47,7 +33,6 @@ module.exports = {
       }
     });
   },
-
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable('Logs');
   }

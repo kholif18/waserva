@@ -2,14 +2,14 @@
     <div class="row mb-4">
         <!-- Status Gateway Card -->
         <div class="col-md-4 mb-3">
-            <div class="status-card status-unknown" id="gateway-status-card">
+            <div class="status-card status-<%= gatewayStatus.statusClass %>" id="gateway-status-card">
                 <div class="card-icon">
                     <i class="bx bx-plug"></i>
                 </div>
-                <div class="card-value" id="gateway-status-text">Checking...</div>
+                <div class="card-value" id="gateway-status-text"><%= gatewayStatus.statusText %></div>
                 <div class="card-title">Status Gateway</div>
-                <div class="card-badge status-badge-unknown" id="gateway-status-badge">
-                    <i class="bx bx-spin"></i> Checking...
+                <div class="card-badge status-badge-<%= gatewayStatus.statusClass %>" id="gateway-status-badge">
+                    <i class="bx <%= gatewayStatus.icon %>"></i> <%= gatewayStatus.statusText %>
                 </div>
             </div>
         </div>
@@ -20,80 +20,79 @@
                 <div class="card-icon">
                     <i class="bx bx-paper-plane"></i>
                 </div>
-                <div class="card-value">5</div>
+                <div class="card-value"><%= messageCountToday %></div>
                 <div class="card-title">Message sent today</div>
                 <div class="card-badge status-badge-unknown">
-                    <i class="bx bx-arrow-to-top"></i> 50%
+                    <i class="bx bx-arrow-to-top"></i> <%= successRate %>%
                 </div>
             </div>
         </div>
 
-        <!-- Statistik Lainnya Card -->
+        <!-- Success Rate -->
         <div class="col-md-4 mb-3">
-            <div class="status-card status-stable">
+            <div class="status-card status-<%= successRate >= 80 ? 'stable' : 'warn' %>">
                 <div class="card-icon">
                     <i class="bx bx-user-check"></i>
                 </div>
-                <div class="card-value">100%</div>
+                <div class="card-value"><%= successRate %>%</div>
                 <div class="card-title">Success rate</div>
-                <div class="card-badge status-badge-connected">
-                    <i class="bx bx-check"></i> Stable
+                <div class="card-badge status-badge-<%= successRate >= 80 ? 'connected' : 'disconnected' %>">
+                    <i class="bx bx-<%= successRate >= 80 ? 'check' : 'x' %>"></i> <%= successRate >= 80 ? 'Stable' : 'Low' %>
                 </div>
             </div>
         </div>
     </div>
 
-    
     <!-- Quick Actions -->
     <div class="quick-actions mb-4">
-        <a href="/message" class="action-btn" data-page="send-message">
+        <a href="/wa/message" class="action-btn" data-page="send-message">
             <i class="bx bx-paper-plane"></i>
             <div class="btn-title">Send Message</div>
             <div class="btn-desc">Test Send Message</div>
         </a>
-        
         <a href="/history" class="action-btn" data-page="history">
             <i class="bx bx-history"></i>
             <div class="btn-title">History</div>
             <div class="btn-desc">Check History Send</div>
         </a>
-        
-        <a href="/login-whatsapp" class="action-btn" data-page="contacts">
+        <a href="/wa/login-whatsapp" class="action-btn" data-page="contacts">
             <i class="bx bx-qr-scan"></i>
             <div class="btn-title">Status Device</div>
             <div class="btn-desc">Check Status Device</div>
         </a>
-        
         <a href="/settings" class="action-btn" data-page="auto-reply">
             <i class="bx bx-cog"></i>
             <div class="btn-title">Settings</div>
             <div class="btn-desc">Setting your WA Gateway</div>
         </a>
     </div>
-    
+
     <!-- Last Message Card -->
     <div class="last-message-card">
         <div class="last-message-header">
             <div class="last-message-title">Last Message</div>
-            <div class="last-message-time">17 Juli 2025, 19:00</div>
+            <div class="last-message-time"><%= lastMessage.timeFormatted %></div>
         </div>
-        
+
+        <% if (lastMessage.message) { %>
         <div class="message-container">
-            <div class="message-avatar">W</div>
+            <div class="message-avatar"><%= (lastMessage.sender || 'W')[0] %></div>
             <div class="message-content">
                 <div class="message-header">
-                    <div class="message-sender">Waserva</div>
-                    <div class="message-time">19:00</div>
+                    <div class="message-sender"><%= lastMessage.sender %></div>
+                    <div class="message-time"><%= lastMessage.timeOnly %></div>
                 </div>
                 <div class="message-text">
-                    Last message
+                    <%= lastMessage.message %>
                 </div>
 
-                <div class="message-status status-delivered">
-                    <i class="icon"></i> success
+                <div class="message-status status-<%= lastMessage.status %>">
+                    <i class="icon"></i> <%= lastMessage.status %>
                 </div>
             </div>
         </div>
+        <% } else { %>
         <div class="text-center">No messages have been sent yet.</div>
+        <% } %>
     </div>
 </section>

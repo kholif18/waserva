@@ -2,39 +2,56 @@ const {
     Log
 } = require('../models');
 
-module.exports = {
-    /**
-     * Simpan log ke database lokal
-     * 
-     * @param {Object} options
-     * @param {number} options.userId - ID user yang terkait
-     * @param {string} options.session - Nama sesi WhatsApp
-     * @param {string} options.phone - Nomor tujuan
-     * @param {string} options.message - Pesan log
-     * @param {string} [options.type='text'] - Jenis log ('text', 'image', dll)
-     * @param {string} [options.status='success'] - Status log ('success', 'failed', dll)
-     */
-    async addLog({
-        userId,
-        session,
-        phone,
-        message,
-        type = 'text',
-        status = 'success',
-    }) {
-        try {
-            await Log.create({
-                userId,
-                sessionName: session,
-                phone,
-                message,
-                type,
-                status,
-            });
-
-            console.log(`✅ Log saved to database for ${phone}`);
-        } catch (err) {
-            console.error(`❌ Failed to save log:`, err.message);
+exports.createLog = async ({
+    userId,
+    level = 'INFO',
+    message
+}) => {
+    try {
+        if (!userId || !message) {
+            console.warn('Skipping log: userId or message missing.');
+            return;
         }
+
+        await Log.create({
+            userId,
+            level,
+            message
+        });
+
+        // Opsional: cleanup jika lebih dari 2000 log
+        await cleanupLogs(userId);
+    } catch (err) {
+        console.error('Error creating log:', err);
     }
 };
+
+// Optional: Auto-delete log jika lebih dari 2000
+async function cleanupLogs(userId) {
+    const total = await Log.count({
+        where: {
+            userId
+        }
+    });
+
+    if (total > 2000) {
+        const excess = total - 2000;
+
+        const oldest = await Log.findAll({
+            where: {
+                userId
+            },
+            order: [
+                ['createdAt', 'ASC']
+            ],
+            limit: excess
+        });
+
+        const ids = oldest.map(log => log.id);
+        await Log.destroy({
+            where: {
+                id: ids
+            }
+        });
+    }
+}

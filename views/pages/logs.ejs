@@ -3,7 +3,15 @@
         <div class="card-body">
             <h4 class="card-title">History</h4>
             <div class="row align-items-end mb-3">
-                <div class="col-md-9">
+                <div class="col-md-3">
+                    <select class="form-select" id="levelFilter">
+                        <option value="">All Levels</option>
+                        <option value="INFO">INFO</option>
+                        <option value="WARN">WARN</option>
+                        <option value="ERROR">ERROR</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
                     <!-- <label for="search" class="form-label">Filter</label> -->
                     <input type="text" class="form-control" id="search" placeholder="Search...">
                 </div>
@@ -16,26 +24,53 @@
                     </a>
                 </div>
             </div>
-            <table class="table table-sm table-hover table-bordered" id="logTable">
-                <thead>
-                    <tr>
-                    <th>#</th>
-                    <th>Time</th>
-                    <th>Level</th>
-                    <th>Topic</th>
-                    <th>Message</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>2</td>
-                        <td>3</td>
-                        <td>4</td>
-                        <td>5</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div style="max-height: 500px; overflow-y: auto; border: 1px solid #ccc;">
+                <table class="table table-sm" id="logTable" style="width: 100%; border-collapse: collapse;">
+                    <thead style="position: sticky; top: 0; background: #f0f0f0;">
+                        <tr>
+                            <th style="padding: 8px; border-bottom: 1px solid #ccc; width: 20%;">Time</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #ccc; width: 10%;">Level</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #ccc; width: 70%;">Message</th>
+                        </tr>
+                    </thead>
+                    <tbody  id="logTableBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
+
+    <script>
+        async function fetchLogs() {
+            const level = document.querySelector('#levelFilter')?.value || '';
+            const keyword = document.querySelector('#search')?.value.toLowerCase() || '';
+
+            const res = await fetch(`/logs/data?limit=25&level=${level}`);
+            const data = await res.json();
+
+            const tbody = document.querySelector('#logTableBody');
+            tbody.innerHTML = '';
+
+            data.data
+                .filter(log => log.message.toLowerCase().includes(keyword))
+                .forEach(log => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="padding: 6px; border-bottom: 1px solid #eee;">${new Date(log.createdAt).toLocaleString()}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #eee;">${log.level}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #eee;">${log.message}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+        }
+
+        document.querySelector('.btn.btn-primary').addEventListener('click', fetchLogs);
+        document.querySelector('.btn.btn-secondary').addEventListener('click', () => {
+            document.querySelector('#search').value = '';
+            document.querySelector('#levelFilter').value = '';
+            fetchLogs();
+        });
+
+        document.addEventListener('DOMContentLoaded', fetchLogs);
+        setInterval(fetchLogs, 5000);
+    </script>
 </section>

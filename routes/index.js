@@ -1,121 +1,50 @@
 const express = require('express');
 const router = express.Router();
 
+// Middleware
+const isAuthenticated = require('../middlewares/isAuthenticated');
+
+// Route Groups
 const authRoutes = require('./auth');
+const dashboardController = require('../controllers/dashboardController');
 const userRoutes = require('./user');
 const apiClientRoutes = require('./apiClient');
 const apiWhatsappRoutes = require('./api/whatsapp');
 const webWhatsappRoutes = require('./whatsapp');
+const historyRoutes = require('./history');
+const settingRoutes = require('./setting');
+const reportRoutes = require('./report');
+const logRoutes = require('./log');
+const helpController = require('../controllers/helpController');
 
-const {
-  renderLoginWhatsApp
-} = require('../controllers/whatsappController');
-
-// 🔒 Authentication
+// Authentication
 router.use('/', authRoutes);
 
-// 👤 User Panel
-router.use('/', userRoutes);
-router.use('/api-clients', apiClientRoutes);
-router.use('/settings', require('./setting'));
+// User Panel
+router.use('/', isAuthenticated, userRoutes);
+router.get('/', isAuthenticated, dashboardController.viewDashboard);
+router.use('/api-clients', isAuthenticated, apiClientRoutes);
+router.use('/settings', isAuthenticated, settingRoutes);
 
-// 🔌 WhatsApp Web Integration
-router.get('/login-whatsapp', renderLoginWhatsApp);
-router.use('/wa', webWhatsappRoutes);
+// WhatsApp Web Integration
+router.use('/wa', isAuthenticated, webWhatsappRoutes);
 
-// 🌐 Public API Endpoint (dengan API Token)
+// History
+router.use('/history', isAuthenticated, historyRoutes);
+
+// Report
+router.use('/report', isAuthenticated, reportRoutes);
+
+// Log
+router.use('/logs', isAuthenticated, logRoutes);
+
+// Public API Endpoint (dengan API Token)
 router.use('/api/whatsapp', apiWhatsappRoutes);
 
-router.get('/', (req, res) => {
-  res.render('pages/dashboard', {
-    title: 'Dashboard',
-    description: 'Halaman utama Waserva',
-    activePage: 'dashboard',
-    user: req.session.user
-  });
-});
+// Help Pages
+router.get('/helps', isAuthenticated, helpController.index);
+router.get('/helps/api', isAuthenticated, helpController.api);
 
-router.get('/message', (req, res) => {
-  res.render('pages/message', {
-    title: 'Message Test',
-    activePage: 'message',
-    user: req.session.user
-  });
-});
-
-router.get('/history', async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const perPage = parseInt(req.query.per_page) || 10;
-  const start = (page - 1) * perPage;
-  const end = start + perPage;
-
-  const paginatedHistory = history.slice(start, end);
-
-  const totalData = history.length; // atau history.length kalau array
-  const totalPages = Math.ceil(history.length / perPage);
-
-  res.render('pages/history', {
-    title: 'History',
-    activePage: 'history',
-    user: req.session.user,
-    history: paginatedHistory,
-    pagination: {
-      currentPage: page,
-      totalPages: totalPages,
-    },
-    req
-  });
-});
-
-router.get('/report', async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const perPage = parseInt(req.query.per_page) || 10;
-  const start = (page - 1) * perPage;
-  const end = start + perPage;
-
-  const paginatedReport = report.slice(start, end);
-
-  const totalData = report.length;
-  const isDataAvailable = report.length > 0;
-  const totalPages = Math.ceil(report.length / perPage);
-
-  res.render('pages/report', {
-    title: 'Message Report',
-    activePage: 'report',
-    report: paginatedReport,
-    user: req.session.user,
-    pagination: {
-      currentPage: page,
-      totalPages: totalPages,
-    },
-    isDataAvailable,
-    totalData,
-    req
-  });
-});
-
-router.get('/logs', (req, res) => {
-  res.render('pages/logs', {
-    title: 'Logs',
-    user: req.session.user,
-    activePage: 'logs'
-  });
-});
-
-router.get('/helps', (req, res) => {
-  res.render('helps/index', {
-    title: 'Help',
-    user: req.session.user,
-    activePage: 'helps'
-  });
-});
-
-router.get('/helps/api', (req, res) => {
-  res.render('helps/api', {
-    title: 'API Help',
-    user: req.session.user,
-    activePage: 'helps'
-  });
-});
+console.log('📦 apiClientRoutes:', typeof apiClientRoutes);
 
 module.exports = router;

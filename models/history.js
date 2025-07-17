@@ -2,25 +2,47 @@
 const {
   Model
 } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
   class History extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-      // define association here
+      // define association here jika perlu
+      // History.belongsTo(models.User, { foreignKey: 'userId' });
     }
   }
+
   History.init({
-    user_id: DataTypes.INTEGER,
-    phone: DataTypes.STRING,
-    message: DataTypes.TEXT,
-    status: DataTypes.STRING
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    phone: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    message: {
+      type: DataTypes.TEXT,
+      allowNull: false
+    },
+    type: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: 'text' 
+    },
+    sessionName: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    status: {
+      type: DataTypes.STRING,
+      allowNull: false
+    }
   }, {
     sequelize,
     modelName: 'History',
+    tableName: 'Histories',
+    timestamps: true
   });
+
   return History;
 };

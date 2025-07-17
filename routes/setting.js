@@ -8,6 +8,6 @@ router.get('/', isAuthenticated, (req, res) => {
     settingController.index(req, res);
 });
 router.post('/save', settingController.save);
-router.post('/reset', isAuthenticated, settingController.reset);
+router.post('/reset', settingController.reset);
 
 module.exports = router;

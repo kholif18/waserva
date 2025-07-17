@@ -7,11 +7,13 @@ const http = require('http');
 const {
   Server
 } = require('socket.io');
+
+// ✅ Tambahkan ini agar tidak error:
 const {
   setSocketInstance
-} = require('./controllers/whatsappController');
+} = require('./controllers/whatsappSessionController');
 
-// Inisialisasi
+// Inisialisasi Express & Socket.IO
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -20,7 +22,7 @@ const io = new Server(server, {
   }
 });
 
-// Inject Socket ke controller
+// Inject Socket ke session controller
 setSocketInstance(io);
 
 // Handle koneksi socket WA
@@ -43,7 +45,7 @@ io.on('connection', (socket) => {
       status: currentSession.status || 'unknown'
     });
 
-    if (currentSession.status === 'qr' && global.qrCodes ?.has(sessionId)) {
+    if (currentSession.status === 'qr' && global.qrCodes?.has(sessionId)) {
       socket.emit('session:qr', {
         session: sessionId,
         qr: global.qrCodes.get(sessionId)
@@ -81,7 +83,7 @@ app.use((req, res, next) => {
 
 // View Engine & Layout
 app.use(expressLayouts);
-app.set('layout', 'layout'); // layout.ejs di views/
+app.set('layout', 'layout');
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));

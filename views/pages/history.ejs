@@ -2,37 +2,40 @@
     <div class="card">
         <div class="card-body">
             <h4 class="card-title">History</h4>
-            <div class="row align-items-end mb-3">
-                <div class="col-md-2">
-                    <label for="fromDate" class="form-label">From Date</label>
-                    <input type="date" class="form-control" id="fromDate">
+            <form id="historyFilterForm" method="GET" action="/history">
+                <div class="row align-items-end mb-3">
+                    <div class="col-md-2">
+                        <label for="fromDate" class="form-label">From Date</label>
+                        <input type="date" class="form-control" id="fromDate" name="fromDate" value="<%= req.query.fromDate || '' %>">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="toDate" class="form-label">To Date</label>
+                        <input type="date" class="form-control" id="toDate" name="toDate" value="<%= req.query.toDate || '' %>">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="" <%= !req.query.status ? 'selected' : '' %>>All Status</option>
+                            <option value="1" <%= req.query.status == '1' ? 'selected' : '' %>>Success</option>
+                            <option value="2" <%= req.query.status == '2' ? 'selected' : '' %>>Pending</option>
+                            <option value="3" <%= req.query.status == '3' ? 'selected' : '' %>>Failed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" placeholder="Search..." value="<%= req.query.search || '' %>">
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-filter-alt"></i> Apply
+                        </button>
+                        <a href="/history" class="btn btn-secondary">
+                            <i class="bx bx-undo"></i> Reset
+                        </a>
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    <label for="toDate" class="form-label">To Date</label>
-                    <input type="date" class="form-control" id="toDate">
-                </div>
-                <div class="col-md-2">
-                    <label for="status" class="form-label">Status</label>
-                    <select class="form-select" id="status" name="status" aria-label="Default select example">
-                        <option selected>All Status</option>
-                        <option value="1">Success</option>
-                        <option value="2">Pending</option>
-                        <option value="3">Failed</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="search" class="form-label">Search</label>
-                    <input type="text" class="form-control" id="search" placeholder="Search...">
-                </div>
-                <div class="col-md-3  d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bx bx-filter-alt"></i> Apply
-                    </button>
-                    <a href="/history" class="btn btn-secondary">
-                        <i class="bx bx-undo"></i> Reset
-                    </a>
-                </div>
-            </div>
+            </form>
+
             <table class="table">
                 <thead>
                     <tr>

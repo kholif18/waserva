@@ -23,3 +23,5 @@ logs/
 
 # QR Code cache (optional)
 public/qr/*.png
+
+sessions/

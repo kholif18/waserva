@@ -1,3 +1,4 @@
+const logService = require('../services/logService');
 const userService = require('../services/userService');
 const fs = require('fs');
 const path = require('path');
@@ -77,6 +78,13 @@ exports.updateMyProfile = async (req, res) => {
         }
 
         await userService.updateUserProfile(userId, updateData);
+
+        await logService.createLog({
+            userId,
+            level: 'INFO',
+            message: `User ${username} updated their profile${newpassword ? ' and changed password' : ''}.`
+        });
+        
         req.flash('success', 'Profil berhasil diperbarui.');
         res.redirect('/profile');
     } catch (err) {

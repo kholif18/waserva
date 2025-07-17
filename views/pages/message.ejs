@@ -198,4 +198,170 @@
 
         </div>
     </div>
+
+    <% if (Array.isArray(success) && success.length > 0) { %>
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+            <div class="toast align-items-center text-bg-success border-0" role="alert" data-bs-delay="5000">
+                <div class="toast-header bg-success text-white">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <strong class="me-auto">Success</strong>
+                    <small>Just now</small>
+                    <button type="button" class="btn-close btn-close-white ms-2 mb-1" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    <%= success[0] %>
+                </div>
+            </div>
+        </div>
+    <% } %>
+    
+    <% console.log("ERROR DATA:", error) %>
+    <% if (Array.isArray(error) && error.length > 0) { %>
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+            <div class="toast align-items-center text-bg-danger border-0" role="alert" data-bs-delay="5000">
+                <div class="toast-header bg-danger text-white">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong class="me-auto">Error</strong>
+                    <small>Just now</small>
+                    <button type="button" class="btn-close btn-close-white ms-2 mb-1" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    <%= error[0] %>
+                </div>
+            </div>
+        </div>
+    <% } %>
+
+    <script>
+        function showToast(type, message) {
+            const colorMap = {
+                success: {
+                    background: '#d1e7dd',
+                    color: '#0f5132',
+                    iconColor: '#0f5132'
+                },
+                error: {
+                    background: '#f8d7da',
+                    color: '#842029',
+                    iconColor: '#842029'
+                },
+                warning: {
+                    background: '#fff3cd',
+                    color: '#664d03',
+                    iconColor: '#664d03'
+                },
+                info: {
+                    background: '#cff4fc',
+                    color: '#055160',
+                    iconColor: '#055160'
+                }
+            };
+
+            const config = colorMap[type] || colorMap.info;
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: type,
+                title: message,
+                showConfirmButton: false,
+                timer: 3000,
+                background: config.background,
+                color: config.color,
+                iconColor: config.iconColor
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const showResponse = (data, successMsg, errorMsg) => {
+                if (data.success) {
+                showToast('success', data.message || successMsg);
+                } else {
+                showToast('error', data.message || errorMsg);
+                }
+            };
+
+            document.querySelector('#text-justified form')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const phone = document.querySelector('#phone').value;
+                const message = document.querySelector('#message').value;
+                const res = await fetch('/wa/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, message })
+                });
+                const data = await res.json();
+                showResponse(data, 'Pesan terkirim!', 'Gagal mengirim pesan!');
+            });
+
+            document.querySelector('#url-justified form')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const phone = document.querySelector('#url-phone').value;
+                const fileUrl = document.querySelector('#fileUrl').value;
+                const caption = document.querySelector('#url-caption').value;
+                const res = await fetch('/wa/send-media', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, fileUrl, caption })
+                });
+                const data = await res.json();
+                showResponse(data, 'Media terkirim!', 'Gagal mengirim media!');
+            });
+
+            document.querySelector('#upload-justified form')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const phone = document.querySelector('#upload-phone').value;
+                const caption = document.querySelector('#upload-caption').value;
+                const file = document.querySelector('#fileUpload').files[0];
+                const formData = new FormData();
+                formData.append('phone', phone);
+                formData.append('caption', caption);
+                formData.append('file-upload', file);
+                const res = await fetch('/wa/send-media-upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                showResponse(data, 'File terkirim!', 'Gagal upload file!');
+            });
+
+            document.querySelector('#grup-justified form')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const groupName = document.querySelector('#groupName').value;
+                const message = document.querySelector('#groupMessage').value;
+                const res = await fetch('/wa/send-group', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ groupName, message })
+                });
+                const data = await res.json();
+                showResponse(data, 'Terkirim ke grup!', 'Gagal mengirim ke grup!');
+            });
+
+            document.querySelector('#bulk-justified form')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const phones = document.querySelector('#phones').value;
+                const message = document.querySelector('#bulkMessage').value;
+                const phoneList = phones.split(/[\n,]+/).map(p => p.trim()).filter(Boolean);
+                
+                const res = await fetch('/wa/send-bulk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phones: phoneList, message })
+                });
+                const data = await res.json();
+                if (Array.isArray(data.results)) {
+                    const failed = data.results.filter(r => !r.success);
+                    if (failed.length === 0) {
+                        showToast('success', 'Pesan terkirim ke semua nomor!');
+                    } else {
+                        showToast('warning', `${failed.length} nomor gagal dikirim.`);
+                    }
+                } else {
+                showToast('error', 'Terjadi kesalahan saat mengirim bulk.');
+                }
+            });
+        });
+    </script>
+
 </section>

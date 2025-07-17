@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const apiClientController = require('../controllers/apiClientController');
-const isAuthenticated = require('../middlewares/isAuthenticated');
 
-router.get('/', isAuthenticated, apiClientController.index);
-router.post('/add', isAuthenticated, apiClientController.add);
-router.post('/toggle/:id', isAuthenticated, apiClientController.toggleActive);
-router.post('/regenerate/:id', isAuthenticated, apiClientController.regenerate);
-router.post('/delete/:id', isAuthenticated, apiClientController.delete);
+// Tidak perlu isAuthenticated di sini, sudah dibungkus dari index.js
+router.get('/', apiClientController.index);
+router.post('/add', apiClientController.add);
+router.post('/toggle/:id', apiClientController.toggleActive);
+router.post('/regenerate/:id', apiClientController.regenerate);
+router.post('/delete/:id', apiClientController.delete);
 
 module.exports = router;

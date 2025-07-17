@@ -47,7 +47,7 @@
     </div>
 
     <script>
-        const sessionName = "<%= user?.username %>"; // atau ambil dari user / input
+        const sessionName = "<%= user?.id %>"; // atau ambil dari user / input
 
         const socket = io({
             query: { session: sessionName }
@@ -117,7 +117,6 @@
             }
         });
 
-
         socket.on('session:qr', (data) => {
             qrContainer.innerHTML = `<img src="${data.qr}" alt="QR Code" class="img-fluid" />`;
         });
@@ -140,7 +139,7 @@
 
         // Log Out
         document.getElementById('logout-wa')?.addEventListener('click', async () => {
-            const res = await fetch(`/api/whatsapp/logout?session=${sessionName}`, {
+            const res = await fetch(`/wa/logout?session=${sessionName}`, {
                 credentials: 'include'
             });
             const data = await res.json();

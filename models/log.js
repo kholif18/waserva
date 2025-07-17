@@ -6,7 +6,7 @@ const {
 module.exports = (sequelize, DataTypes) => {
   class Log extends Model {
     static associate(models) {
-      // Jika ada relasi nanti
+      // Log belongs to a User
       Log.belongsTo(models.User, {
         foreignKey: 'userId'
       });
@@ -16,33 +16,22 @@ module.exports = (sequelize, DataTypes) => {
   Log.init({
     userId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: false
     },
-    sessionName: {
+    level: {
       type: DataTypes.STRING,
       allowNull: false,
-    },
-    phone: {
-      type: DataTypes.STRING,
-      allowNull: true,
+      defaultValue: 'INFO'
     },
     message: {
       type: DataTypes.TEXT,
-      allowNull: false,
-    },
-    type: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      defaultValue: 'text',
-    },
-    status: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      defaultValue: 'success',
+      allowNull: false
     }
   }, {
     sequelize,
     modelName: 'Log',
+    tableName: 'Logs',
+    timestamps: true
   });
 
   return Log;

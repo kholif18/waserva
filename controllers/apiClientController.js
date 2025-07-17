@@ -3,6 +3,7 @@ const {
     ApiClient,
     User
 } = require('../models');
+const logService = require('../services/logService');
 const crypto = require('crypto');
 const dayjs = require('dayjs');
 
@@ -10,9 +11,9 @@ const dayjs = require('dayjs');
 function slugify(str) {
     return str
         .trim()
-        .replace(/\s+/g, '_') // replace spaces with underscores
-        .replace(/[^\w\-]+/g, '') // remove special characters
-        .replace(/\_+/g, '_'); // remove duplicate underscores
+        .replace(/\s+/g, '_')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\_+/g, '_');
 }
 
 // Display list of API Clients
@@ -24,18 +25,15 @@ exports.index = async (req, res) => {
             }
         });
 
-        // ⬇️ Ambil data user dari DB supaya lengkap
         const user = await User.findByPk(req.session.user.id);
 
-        const formattedClients = clients.map(client => {
-            return {
-                ...client.get({
-                    plain: true
-                }),
-                formattedCreatedAt: dayjs(client.createdAt).format('DD-MM-YYYY HH:mm'),
-                formattedUpdatedAt: dayjs(client.updatedAt).format('DD-MM-YYYY HH:mm'),
-            };
-        });
+        const formattedClients = clients.map(client => ({
+            ...client.get({
+                plain: true
+            }),
+            formattedCreatedAt: dayjs(client.createdAt).format('DD-MM-YYYY HH:mm'),
+            formattedUpdatedAt: dayjs(client.updatedAt).format('DD-MM-YYYY HH:mm'),
+        }));
 
         res.render('pages/api-clients', {
             title: 'API Clients',
@@ -56,7 +54,6 @@ exports.add = async (req, res) => {
             app_name
         } = req.body;
 
-        // Check for duplicate app name per user
         const existing = await ApiClient.findOne({
             where: {
                 userId: req.session.user.id,
@@ -70,16 +67,21 @@ exports.add = async (req, res) => {
         }
 
         const token = crypto.randomBytes(32).toString('base64');
-
         const slugAppName = slugify(app_name);
 
         await ApiClient.create({
             userId: req.session.user.id,
-            appName: slugAppName, // gunakan slug
-            sessionName: slugAppName, // tetap slug
+            appName: slugAppName,
+            sessionName: slugAppName,
             apiToken: token,
             createdBy: req.session.user.id,
             isActive: true
+        });
+
+        await logService.createLog({
+            userId: req.session.user.id,
+            level: 'INFO',
+            message: `Created API Client: ${slugAppName}`
         });
 
         req.flash('success', 'API Client added successfully.');
@@ -108,6 +110,12 @@ exports.toggleActive = async (req, res) => {
 
         await client.update({
             isActive: !client.isActive
+        });
+
+        await logService.createLog({
+            userId: req.session.user.id,
+            level: 'INFO',
+            message: `Toggled API Client status: ${client.appName} → ${!client.isActive ? 'INACTIVE' : 'ACTIVE'}`
         });
 
         req.flash('success', 'Client status updated.');
@@ -140,6 +148,12 @@ exports.regenerate = async (req, res) => {
             apiToken: newToken
         });
 
+        await logService.createLog({
+            userId: req.session.user.id,
+            level: 'WARN',
+            message: `Regenerated token for API Client: ${client.appName}`
+        });
+
         req.flash('success', 'Token regenerated successfully.');
         res.redirect('/api-clients');
     } catch (err) {
@@ -152,12 +166,20 @@ exports.regenerate = async (req, res) => {
 // Delete API Client
 exports.delete = async (req, res) => {
     try {
-        await ApiClient.destroy({
+        const deleted = await ApiClient.destroy({
             where: {
                 id: req.params.id,
                 userId: req.session.user.id
             }
         });
+
+        if (deleted) {
+            await logService.createLog({
+                userId: req.session.user.id,
+                level: 'ERROR',
+                message: `Deleted API Client: ID ${req.params.id}`
+            });
+        }
 
         req.flash('success', 'API Client deleted successfully.');
         res.redirect('/api-clients');
