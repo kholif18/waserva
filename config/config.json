@@ -4,20 +4,20 @@
     "password": "r4hm4dNUR",
     "database": "waserva_dev",
     "host": "localhost",
-    "dialect": "mariadb"
+    "dialect": "mysql"
   },
   "test": {
     "username": "root",
     "password": "r4hm4dNUR",
     "database": "waserva_dev",
     "host": "localhost",
-    "dialect": "mariadb"
+    "dialect": "mysql"
   },
   "production": {
     "username": "root",
     "password": "r4hm4dNUR",
     "database": "waserva_dev",
     "host": "localhost",
-    "dialect": "mariadb"
+    "dialect": "mysql"
   }
 }
