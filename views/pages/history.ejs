@@ -41,6 +41,7 @@
                     <tr>
                         <th style="width: 20%">Date & Time</th>
                         <th style="width: 20%">to</th>
+                        <th style="width: 15%">Source</th>
                         <th style="width: 50%">Message</th>
                         <th style="width: 10%">Status</th>
                     </tr>
@@ -49,7 +50,8 @@
                     <% history.forEach((item, index) => { %>
                         <tr>
                         <td><%= item.datetime %></td>
-                        <td><%= item.to %></td>
+                        <td><%= item.to.length > 16 ? item.to.substring(0, 16) + '…' : item.to %></td>
+                        <td><%= item.source || 'panel' %></td>
                         <td><%= item.message %></td>
                         <td><%= item.status %></td>
                         </tr>
@@ -57,7 +59,6 @@
                 </tbody>
             </table>
             <%- include('../partials/pagination', { pagination, req }) %>
-
         </div>
     </div>
 </section>

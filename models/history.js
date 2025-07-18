@@ -29,7 +29,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue: 'text' 
     },
-    sessionName: {
+    source: {
       type: DataTypes.STRING,
       allowNull: true
     },

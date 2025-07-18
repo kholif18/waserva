@@ -100,6 +100,7 @@ exports.index = async (req, res) => {
         to: h.phone,
         message: formatMessage(h.message, h.type),
         status: h.status,
+        source: h.source || 'panel'
     }));
 
     const pagination = paginate('/history', page, limit, count, req.query);

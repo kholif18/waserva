@@ -4,6 +4,7 @@ const {
     Setting
 } = require('../models');
 const logService = require('../services/logService');
+const whatsappSessionController = require('./whatsappSessionController');
 
 module.exports = {
     showLogin: (req, res) => {
@@ -116,12 +117,14 @@ module.exports = {
             username,
             password
         } = req.body;
+
         try {
             const user = await User.findOne({
                 where: {
                     username
                 }
             });
+
             if (!user) {
                 return res.status(400).render('auth/login', {
                     layout: false,
@@ -147,24 +150,39 @@ module.exports = {
                 });
             }
 
+            // Simpan user ke sesi
             req.session.user = {
                 id: user.id,
                 name: user.name,
                 username: user.username,
                 profile_image: user.profile_image
             };
+
+            // Logging
             await logService.createLog({
                 userId: user.id,
                 level: 'INFO',
                 message: `User ${user.username} logged in successfully.`
             });
+
+            // 🟢 Panggil startSession() setelah login berhasil
+            whatsappSessionController.startSession({
+                    session: {
+                        user: req.session.user
+                    }
+                }, {
+                    json: () => {}
+                } // Fake response object
+            );
+
             res.redirect('/');
         } catch (err) {
             await logService.createLog({
-                userId: user?.id || 0, 
+                userId: 0,
                 level: 'WARN',
-                message: `Login failed for email ${req.body.email}`
+                message: `Login failed for username ${username}`
             });
+
             res.status(500).send('Login error');
         }
     },

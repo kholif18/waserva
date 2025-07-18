@@ -86,13 +86,64 @@
                     <%= lastMessage.message %>
                 </div>
 
-                <div class="message-status status-<%= lastMessage.status %>">
-                    <i class="icon"></i> <%= lastMessage.status %>
+                <div class="message-status <%= lastMessage.statusClass %>">
+                    <i class="<%= lastMessage.iconClass %>"></i> <%= lastMessage.status %>
                 </div>
+
+
             </div>
         </div>
         <% } else { %>
         <div class="text-center">No messages have been sent yet.</div>
         <% } %>
     </div>
+
+    <script>
+        const sessionId = "<%= user.id %>";
+        const socket = io({
+            query: { session: sessionId }
+        });
+
+        socket.on('session:update', (data) => {
+            const status = data.status;
+
+            const statusCard = document.getElementById('gateway-status-card');
+            const statusText = document.getElementById('gateway-status-text');
+            const statusBadge = document.getElementById('gateway-status-badge');
+
+            // 🔁 Update teks
+            statusText.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+
+            // 🔁 Update badge + icon
+            let badgeHTML = '';
+            if (status === 'connected') {
+                badgeHTML = '<i class="bx bx-check"></i> Connected';
+                statusCard.className = 'status-card status-connected';
+                statusBadge.className = 'card-badge status-badge-connected';
+            } else if (status === 'disconnected') {
+                badgeHTML = '<i class="bx bx-x"></i> Disconnected';
+                statusCard.className = 'status-card status-disconnected';
+                statusBadge.className = 'card-badge status-badge-disconnected';
+            } else if (status === 'auth_failure') {
+                badgeHTML = '<i class="bx bx-error"></i> Auth Failed';
+                statusCard.className = 'status-card status-disconnected';
+                statusBadge.className = 'card-badge status-badge-disconnected';
+            } else if (status === 'qr') {
+                badgeHTML = '<i class="bx bx-qr"></i> Scan QR';
+                statusCard.className = 'status-card status-unknown';
+                statusBadge.className = 'card-badge status-badge-unknown';
+            } else if (status === 'starting') {
+                badgeHTML = '<i class="bx bx-loader-circle bx-spin"></i> Starting';
+                statusCard.className = 'status-card status-unknown';
+                statusBadge.className = 'card-badge status-badge-unknown';
+            } else {
+                badgeHTML = '<i class="bx bx-question-mark"></i> Unknown';
+                statusCard.className = 'status-card status-unknown';
+                statusBadge.className = 'card-badge status-badge-unknown';
+            }
+
+            statusBadge.innerHTML = badgeHTML;
+        });
+    </script>
+
 </section>

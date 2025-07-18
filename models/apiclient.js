@@ -4,15 +4,15 @@ const {
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class ApiClient extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-      // define association here
+      // Setiap API Client dimiliki oleh satu User
+      ApiClient.belongsTo(models.User, {
+        foreignKey: 'userId',
+        as: 'User'
+      });
     }
   }
+
   ApiClient.init({
     userId: {
       type: DataTypes.INTEGER,
@@ -22,7 +22,6 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false
     },
-    sessionName: DataTypes.STRING,
     apiToken: {
       type: DataTypes.STRING,
       allowNull: false,

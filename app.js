@@ -8,7 +8,6 @@ const {
   Server
 } = require('socket.io');
 
-// ✅ Tambahkan ini agar tidak error:
 const {
   setSocketInstance
 } = require('./controllers/whatsappSessionController');
@@ -27,11 +26,11 @@ setSocketInstance(io);
 
 // Handle koneksi socket WA
 io.on('connection', (socket) => {
-  console.log('🔌 Socket client connected');
+  console.log('Socket client connected');
 
   const sessionId = socket.handshake.query.session;
   if (!sessionId) {
-    console.warn('⚠️ Session ID not provided in socket');
+    console.warn('Session ID not provided in socket');
     return;
   }
 
@@ -95,5 +94,5 @@ app.use('/', mainRoutes);
 // Start App
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`🚀 waserva is running on http://localhost:${PORT}`);
+  console.log(`waserva is running on http://localhost:${PORT}`);
 });

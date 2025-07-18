@@ -9,4 +9,5 @@ router.post('/send-media', verifyApiClient, controller.sendMediaUpload);
 router.post('/send-group', verifyApiClient, controller.sendGroupMessage);
 router.post('/send-bulk', verifyApiClient, controller.sendBulkMessage);
 
+router.get('/check-connection', verifyApiClient, controller.checkConnection);
 module.exports = router;

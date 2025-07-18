@@ -20,6 +20,7 @@ module.exports = async function verifyApiClient(req, res, next) {
             },
             include: [{
                 model: User,
+                as: 'User', // tambahkan ini
                 attributes: ['id', 'username', 'email']
             }]
         });
@@ -30,7 +31,6 @@ module.exports = async function verifyApiClient(req, res, next) {
             });
         }
 
-        // Inject client info to request object
         req.apiClient = client;
         req.sessionName = client.sessionName;
         req.userId = client.userId;

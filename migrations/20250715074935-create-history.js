@@ -25,7 +25,7 @@ module.exports = {
         type: Sequelize.STRING, 
         allowNull: true
       },
-      sessionName: {
+      source: {
         type: Sequelize.STRING, 
         allowNull: true
       },

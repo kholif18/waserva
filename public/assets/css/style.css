@@ -1146,7 +1146,7 @@ thead tr th {
 }
 
 .status-connected {
-    background: linear-gradient(135deg, var(--bs-primary), var(--bsprimary-dark));
+    background: linear-gradient(135deg, var(--bs-success), #0d6c80);
 }
 
 .status-disconnected {
@@ -1163,6 +1163,20 @@ thead tr th {
 
 .status-stable {
     background: linear-gradient(135deg, var(--bs-success), #055160);
+}
+
+.status-warn {
+    background: linear-gradient(135deg, var(--bs-warning), #e0a800);
+}
+
+.status-badge-stable {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.status-badge-warn {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
 }
 
 .status-badge-connected {
@@ -1306,8 +1320,8 @@ thead tr th {
 }
 
 .message-text {
-    word-wrap: break-word;      /* Untuk memecah kata panjang */
-    overflow-wrap: break-word;  /* Dukungan tambahan */
+    word-wrap: break-word;      
+    overflow-wrap: break-word; 
     white-space: normal;
 }
 
@@ -1320,16 +1334,37 @@ thead tr th {
     font-weight: 500;
 }
 
-.status-delivered {
+.msg-status-success {
     background-color: rgba(46, 204, 113, 0.15);
     color: var(--bs-success);
+    padding: 4px 8px;
+    border-radius: 5px;
+    display: inline-block;
 }
 
-.status-pending {
+.msg-status-failed {
+    background-color: rgba(243, 18, 18, 0.15);
+    color: var(--bs-danger);
+    padding: 4px 8px;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.msg-status-warn {
     background-color: rgba(243, 156, 18, 0.15);
     color: var(--bs-warning);
+    padding: 4px 8px;
+    border-radius: 5px;
+    display: inline-block;
 }
 
+.msg-status-unknown {
+    background-color: rgba(149, 165, 166, 0.15);
+    color: #7f8c8d;
+    padding: 4px 8px;
+    border-radius: 5px;
+    display: inline-block;
+}
 
 .stats-container {
     display: grid;

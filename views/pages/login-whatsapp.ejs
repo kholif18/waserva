@@ -61,26 +61,6 @@
             statusText.textContent = text;
             statusText.style.color = color;
         }
-
-        // 🔃 Otomatis mulai session saat halaman dimuat
-        async function autoStartSession() {
-            try {
-                const res = await fetch('/wa/start', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include'
-                });
-                const data = await res.json();
-                console.log('Session start response:', data);
-            } catch (err) {
-                console.error('Gagal mulai sesi WhatsApp:', err);
-            }
-        }
-        
-        // ⏩ Jalankan saat halaman siap
-        window.addEventListener('DOMContentLoaded', () => {
-            autoStartSession(); // ⬅️ Ini penting!
-        });
         
         socket.on('connect', () => {
             updateStatus("Terkoneksi ke server", 'green');
@@ -151,5 +131,4 @@
             }
         });
     </script>
-
 </section>
