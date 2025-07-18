@@ -17,10 +17,6 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false
       },
-      sessionName: {
-        type: Sequelize.STRING,
-        allowNull: true
-      },
       apiToken: {
         type: Sequelize.STRING,
         allowNull: false,

@@ -3,12 +3,6 @@ const upload = multer({
     storage: multer.memoryStorage()
 });
 
-const {
-    normalizePhoneNumber
-} = require('../utils/phone');
-const {
-    Setting
-} = require('../models');
 const whatsappService = require('../services/whatsappService');
 
 function viewMessagePage(req, res) {
@@ -21,29 +15,15 @@ function viewMessagePage(req, res) {
     });
 }
 
-async function getNormalizedPhone(req, rawPhone) {
-    const userId = req.session?.user?.id;
-    const setting = await Setting.findOne({
-        where: {
-            userId,
-            key: 'country_code'
-        }
-    });
-
-    const countryCode = setting?.value || '62';
-    return normalizePhoneNumber(rawPhone, countryCode);
-}
-
 async function sendMessage(req, res) {
     const userId = req.session.user.id;
     const {
         phone,
         message
     } = req.body;
-    const normalizedPhone = await getNormalizedPhone(req, phone);
     const source = 'panel';
 
-    const result = await whatsappService.sendText(userId, normalizedPhone, message, source);
+    const result = await whatsappService.sendText(userId, phone, message, source);
     res.status(result.success ? 200 : 500).json(result);
 }
 
@@ -54,10 +34,9 @@ async function sendMedia(req, res) {
         fileUrl,
         caption
     } = req.body;
-    const normalizedPhone = await getNormalizedPhone(req, phone);
     const source = 'panel';
 
-    const result = await whatsappService.sendMediaFromUrl(userId, normalizedPhone, fileUrl, caption, source);
+    const result = await whatsappService.sendMediaFromUrl(userId, phone, fileUrl, caption, source);
     res.status(result.success ? 200 : 500).json(result);
 }
 
@@ -70,10 +49,9 @@ const sendMediaUpload = [
             caption
         } = req.body;
         const file = req.file;
-        const normalizedPhone = await getNormalizedPhone(req, phone);
         const source = 'panel';
 
-        const result = await whatsappService.sendMediaFromUpload(userId, normalizedPhone, file, caption, source);
+        const result = await whatsappService.sendMediaFromUpload(userId, phone, file, caption, source);
         res.status(result.success ? 200 : 500).json(result);
     }
 ];
@@ -99,7 +77,7 @@ async function sendBulkMessage(req, res) {
     } = req.body;
     const source = 'panel';
 
-    const result = await whatsappService.sendBulk(userId, phones, message, delay, req, source);
+    const result = await whatsappService.sendBulk(userId, phones, message, delay, source);
     res.json(result);
 }
 

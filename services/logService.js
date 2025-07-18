@@ -22,7 +22,7 @@ exports.createLog = async ({
         // Opsional: cleanup jika lebih dari 2000 log
         await cleanupLogs(userId);
     } catch (err) {
-        console.error('Error creating log:', err);
+        console.error('❌ Error creating log:', err.message, err.errors || err);
     }
 };
 

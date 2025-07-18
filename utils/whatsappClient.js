@@ -7,7 +7,7 @@ const clients = global.clients = global.clients || new Map();
  * @returns {Client|null}
  */
 function getClient(userId) {
-    return clients.get(userId) || null;
+    return clients.get(String(userId)) || null;
 }
 
 /**
@@ -16,7 +16,7 @@ function getClient(userId) {
  * @param {Client} clientInstance
  */
 function setClient(userId, clientInstance) {
-    clients.set(userId, clientInstance);
+    clients.set(String(userId), clientInstance);
 }
 
 /**
@@ -24,12 +24,12 @@ function setClient(userId, clientInstance) {
  * @param {number|string} userId
  */
 function removeClient(userId) {
-    clients.delete(userId);
+    clients.delete(String(userId));
 }
 
 /**
  * Ambil semua client aktif (opsional, jika mau tampilkan di dashboard misalnya)
- * @returns {Map<any, any>}
+ * @returns {Map<string, Client>}
  */
 function getAllClients() {
     return clients;

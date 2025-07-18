@@ -7,16 +7,16 @@ const qrcode = require('qrcode');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const {
+    Op
+} = require('sequelize');
 const logService = require('./logService');
 const {
     getClient,
     setClient,
     removeClient
 } = require('../utils/whatsappClient');
-
-const {
-    settingService
-} = require('./settingService');
+const settingService = require('./settingService');
 const {
     History,
     User
@@ -198,61 +198,117 @@ async function initActiveSessions() {
 
 // ========== Messaging ==========
 
-// Helper
+// Helper delay
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function getSettingsAndClient(userId) {
-    const client = getClient(userId);
-    if (!client) return {
-        error: 'Session tidak ditemukan'
-    };
+// Cek apakah user mencapai batas rate limit
+async function isRateLimited(userId, limit, decaySeconds) {
+    if (!limit || !decaySeconds) return false;
 
-    const settings = await settingService.getUserSettings(userId);
-    const {
-        country_code = '62',
-            timeout = 30,
-            max_retry = 3,
-            retry_interval = 10
-    } = settings;
+    const since = new Date(Date.now() - Number(decaySeconds) * 1000);
+    if (isNaN(since.getTime())) return false;
 
-    return {
-        client,
-        country_code,
-        timeout,
-        max_retry,
-        retry_interval
-    };
+    const count = await History.count({
+        where: {
+            userId,
+            createdAt: {
+                [Op.gte]: since
+            }
+        }
+    });
+
+    return count >= limit;
 }
 
+// Ambil client dan semua setting user
+async function getSettingsAndClient(userId) {
+    try {
+        const client = getClient(userId);
+        if (!client) return {
+            error: 'Session tidak ditemukan'
+        };
+
+        const settings = await settingService.getUserSettings(userId);
+        return {
+            client,
+            ...settings
+        };
+
+    } catch (err) {
+        console.error('Error in getSettingsAndClient:', err);
+        return {
+            error: 'Gagal memuat setting pengguna'
+        };
+    }
+}
+
+// Kirim pesan teks WhatsApp
 async function sendText(userId, rawPhone, message, source = 'unknown') {
+    const settingsResult = await getSettingsAndClient(userId);
+    if (settingsResult.error) {
+        return {
+            success: false,
+            error: settingsResult.error
+        };
+    }
+
     const {
         client,
         country_code,
         timeout,
         max_retry,
         retry_interval,
-        error
-    } = await getSettingsAndClient(userId);
-    if (error) return {
-        success: false,
-        error
-    };
+        rate_limit_limit,
+        rate_limit_decay
+    } = settingsResult;
 
     const phone = normalizePhoneNumber(rawPhone, country_code);
-    if (!phone) return {
-        success: false,
-        error: 'Nomor tidak valid'
-    };
+    if (!phone) {
+        return {
+            success: false,
+            error: 'Nomor tidak valid'
+        };
+    }
+
+    // Cek rate limit
+    const limited = await isRateLimited(userId, rate_limit_limit, rate_limit_decay);
+    if (limited) {
+        await logService.createLog({
+            userId,
+            level: 'WARNING',
+            message: `Rate limit exceeded: Max ${rate_limit_limit} messages per ${rate_limit_decay}s.`
+        });
+
+        return {
+            success: false,
+            error: `Rate limit exceeded. Max ${rate_limit_limit} messages per ${rate_limit_decay} seconds.`
+        };
+    }
+
+    // Debug log saat development
+    if (process.env.NODE_ENV !== 'production') {
+        await logService.createLog({
+            userId,
+            level: 'DEBUG',
+            message: `[DEV] Kirim pesan: ${JSON.stringify({
+                rawPhone,
+                normalized: phone,
+                timeout,
+                max_retry,
+                retry_interval
+            })}`
+        });
+    }
 
     let attempt = 0;
-    let success = false;
     let lastError = null;
 
-    while (attempt <= max_retry && !success) {
+    while (attempt <= max_retry) {
         try {
             const sendPromise = client.sendMessage(`${phone}@c.us`, message);
+
             await Promise.race([
                 sendPromise,
                 new Promise((_, reject) =>
@@ -264,31 +320,36 @@ async function sendText(userId, rawPhone, message, source = 'unknown') {
                 userId,
                 phone,
                 message,
-                status: 'success',
                 type: 'text',
+                status: 'success',
                 source
             });
+
             return {
                 success: true
             };
 
         } catch (err) {
             lastError = err;
+            console.error(`❌ Error kirim pesan (attempt ${attempt}):`, err);
+
             if (attempt === max_retry) {
                 await History.create({
                     userId,
                     phone,
                     message,
-                    status: 'failed',
                     type: 'text',
+                    status: 'failed',
                     source
                 });
+
                 return {
                     success: false,
                     error: 'Gagal mengirim pesan',
-                    detail: err.message || lastError?.message
+                    detail: err.message
                 };
             }
+
             attempt++;
             await delay(retry_interval * 1000);
         }

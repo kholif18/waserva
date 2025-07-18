@@ -40,37 +40,76 @@
     </div>
 
     <script>
-        async function fetchLogs() {
+        let offset = 0;
+        const limit = 100; // kamu bisa ubah ke 200, 500, dst
+        let isLoading = false;
+        let reachedEnd = false;
+
+        async function fetchLogs(append = true, reset = false) {
+            if (isLoading || reachedEnd) return;
+            isLoading = true;
+
             const level = document.querySelector('#levelFilter')?.value || '';
             const keyword = document.querySelector('#search')?.value.toLowerCase() || '';
 
-            const res = await fetch(`/logs/data?limit=25&level=${level}`);
+            const res = await fetch(`/logs/data?limit=${limit}&offset=${offset}&level=${level}`);
             const data = await res.json();
 
             const tbody = document.querySelector('#logTableBody');
-            tbody.innerHTML = '';
 
-            data.data
-                .filter(log => log.message.toLowerCase().includes(keyword))
-                .forEach(log => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td style="padding: 6px; border-bottom: 1px solid #eee;">${new Date(log.createdAt).toLocaleString()}</td>
-                        <td style="padding: 6px; border-bottom: 1px solid #eee;">${log.level}</td>
-                        <td style="padding: 6px; border-bottom: 1px solid #eee;">${log.message}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+            if (reset) {
+                tbody.innerHTML = '';
+                offset = 0;
+                reachedEnd = false;
+            }
+
+            const filteredData = data.data.filter(log => log.message.toLowerCase().includes(keyword));
+
+            if (!append) tbody.innerHTML = '';
+
+            filteredData.forEach(log => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="padding: 6px; border-bottom: 1px solid #eee;">${new Date(log.createdAt).toLocaleString()}</td>
+                    <td style="padding: 6px; border-bottom: 1px solid #eee;">${log.level}</td>
+                    <td style="padding: 6px; border-bottom: 1px solid #eee;">${log.message}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if (data.data.length < limit) {
+                reachedEnd = true; // tidak ada data lagi di server
+            } else {
+                offset += limit;
+            }
+
+            isLoading = false;
         }
 
-        document.querySelector('.btn.btn-primary').addEventListener('click', fetchLogs);
+        document.querySelector('.btn.btn-primary').addEventListener('click', () => {
+            offset = 0;
+            reachedEnd = false;
+            fetchLogs(false, true);
+        });
+
         document.querySelector('.btn.btn-secondary').addEventListener('click', () => {
             document.querySelector('#search').value = '';
             document.querySelector('#levelFilter').value = '';
-            fetchLogs();
+            offset = 0;
+            reachedEnd = false;
+            fetchLogs(false, true);
         });
 
-        document.addEventListener('DOMContentLoaded', fetchLogs);
-        setInterval(fetchLogs, 5000);
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchLogs();
+            const scrollArea = document.querySelector('div[style*="max-height"]');
+
+            scrollArea.addEventListener('scroll', () => {
+                const nearBottom = scrollArea.scrollTop + scrollArea.clientHeight >= scrollArea.scrollHeight - 100;
+                if (nearBottom) {
+                    fetchLogs(true);
+                }
+            });
+        });
     </script>
 </section>

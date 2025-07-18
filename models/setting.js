@@ -13,8 +13,7 @@ module.exports = (sequelize, DataTypes) => {
   }
   Setting.init({
     userId: {
-      type: DataTypes.INTEGER,
-      field: 'user_id',
+      type: DataTypes.INTEGER
     },
     key: DataTypes.STRING,
     value: DataTypes.STRING
@@ -22,7 +21,6 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'Setting',
     tableName: 'Settings',
-    underscored: true
   });
   return Setting;
 };
