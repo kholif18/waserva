@@ -1,8 +1,10 @@
 const bcrypt = require('bcryptjs');
 const {
     User,
-    Setting
+    Setting,
+    PasswordResetToken
 } = require('../models');
+const crypto = require('crypto');
 const logService = require('../services/logService');
 const whatsappSessionController = require('./whatsappSessionController');
 
@@ -140,13 +142,27 @@ module.exports = {
                 message: `New user registered: ${user.username}`
             });
 
-            // Mulai sesi WhatsApp
-            //await whatsappSessionController.startUserSession(user.id);
-
             res.redirect('/');
+            // Mulai sesi WhatsApp dibelakang layar
+            process.nextTick(() => {
+                whatsappSessionController.startUserSession(user.id)
+                    .catch(err => {
+                        console.error('WA session error:', err);
+                    });
+            });
         } catch (err) {
             console.error('Register error:', err);
-            res.status(500).send('Gagal register');
+            res.status(500).render('auth/register', {
+                layout: false,
+                errors: {
+                    general: 'Terjadi kesalahan saat registrasi'
+                },
+                old: {
+                    name,
+                    username,
+                    email
+                }
+            });
         }
     },
 
@@ -212,7 +228,10 @@ module.exports = {
             });
 
             // Start WA session
-            await whatsappSessionController.startUserSession(user.id);
+            whatsappSessionController.startUserSession(user.id)
+            .catch(err => {
+                console.error('WA session error:', err);
+            });
 
             res.redirect('/');
         } catch (err) {
@@ -222,8 +241,161 @@ module.exports = {
                 message: `Login failed for username ${username}`
             });
 
-            res.status(500).send('Login error');
+            res.status(500).render('auth/login', {
+                layout: false,
+                errors: {
+                    general: 'Terjadi kesalahan saat login'
+                },
+                old: {
+                    username,
+                }
+            });
+
         }
+    },
+
+    showForgotPassword: (req, res) => {
+        res.render('auth/forgot-password', {
+            layout: false,
+            errors: {},
+            old: {}
+        });
+    },
+
+    processForgotPassword: async (req, res) => {
+        const {
+            username
+        } = req.body;
+        const user = await User.findOne({
+            where: {
+                username
+            }
+        });
+
+        if (!user) {
+            return res.status(400).render('auth/forgot-password', {
+                layout: false,
+                errors: {
+                    username: 'Username tidak ditemukan'
+                },
+                old: {
+                    username
+                }
+            });
+        }
+
+        // Buat token acak
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 1000 * 60 * 30); // 30 menit
+
+        // Simpan token
+        await PasswordResetToken.create({
+            userId: user.id,
+            token,
+            expiresAt,
+            used: false
+        });
+
+        const resetLink = `${req.protocol}://${req.get('host')}/reset-password/${token}`;
+
+        // 🚧 Kirim link ke email atau tampilkan langsung (sementara)
+        console.log(`🔗 Reset link: ${resetLink}`);
+
+        req.flash('success', 'Link reset password berhasil dibuat (lihat console).');
+        res.redirect('/login');
+    },
+
+    showResetPasswordForm: async (req, res) => {
+        const {
+            token
+        } = req.params;
+
+        const record = await PasswordResetToken.findOne({
+            where: {
+                token,
+                used: false
+            }
+        });
+
+        if (!record || record.expiresAt < new Date()) {
+            req.flash('error', 'Token tidak valid atau sudah kedaluwarsa.');
+            return res.redirect('/login');
+        }
+
+        res.render('auth/reset-password', {
+            layout: false,
+            userId: record.userId,
+            token,
+            errors: {}
+        });
+    },
+
+    updatePassword: async (req, res) => {
+        const {
+            token
+        } = req.params;
+        const {
+            password,
+            confirmPassword
+        } = req.body;
+        const errors = {};
+
+        const record = await PasswordResetToken.findOne({
+            where: {
+                token,
+                used: false
+            }
+        });
+
+        if (!record || record.expiresAt < new Date()) {
+            req.flash('error', 'Token tidak valid atau sudah kedaluwarsa.');
+            return res.redirect('/login');
+        }
+
+        if (!password || password.length < 8) {
+            errors.password = 'Password minimal 8 karakter.';
+        } else if (password !== confirmPassword) {
+            errors.confirmPassword = 'Konfirmasi tidak cocok.';
+        } else if (!isStrongPassword(password)) {
+            errors.password = 'Password harus mengandung huruf besar, kecil, angka, dan simbol.';
+        }
+
+        if (Object.keys(errors).length > 0) {
+            return res.status(400).render('auth/reset-password', {
+                layout: false,
+                userId: record.userId,
+                token,
+                errors
+            });
+        }
+
+        const hashed = await bcrypt.hash(password, 10);
+
+        const updated = await User.update({
+            password: hashed
+        }, {
+            where: {
+                id: record.userId
+            }
+        });
+
+        if (updated[0] === 0) {
+            req.flash('error', 'Gagal menyimpan password baru.');
+            return res.redirect('/login');
+        }
+
+        // Tandai token sudah digunakan
+        record.used = true;
+        await record.save();
+
+        await logService.createLog({
+            userId: record.userId,
+            level: 'INFO',
+            message: 'Password user berhasil direset via token.'
+        });
+
+        req.flash('success', 'Password berhasil diubah. Silakan login.');
+        res.redirect('/login');
     },
 
     logout: async (req, res) => {

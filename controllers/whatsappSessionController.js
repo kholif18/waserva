@@ -112,8 +112,8 @@ async function logoutSession(req, res) {
     try {
         const result = await whatsappService.logoutSession(sessionId);
         res.json({
-            success: true,
-            message: result
+            success: result === true,
+            message: result === true ? 'Logout berhasil' : 'Logout gagal'
         });
     } catch (err) {
         res.status(500).json({
@@ -149,14 +149,14 @@ async function resetSession(req, res) {
     const sessionPath = path.join(__dirname, '../sessions', `session-${sessionKey}`);
 
     try {
-        // ✅ Destroy client jika masih ada
-        const client = getClient(sessionKey);
+        // Destroy client jika masih ada
+        const client = getClient(userId);
         if (client) {
             await client.destroy(); // ini penting agar lock dilepas
-            removeClient(sessionKey);
+            removeClient(userId);
         }
 
-        // 🧹 Hapus folder session
+        // Hapus folder session
         if (fs.existsSync(sessionPath)) {
             fs.rmSync(sessionPath, {
                 recursive: true,

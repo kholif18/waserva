@@ -77,31 +77,26 @@ async function startSession(userId) {
     try {
         if (fs.existsSync(sessionPath)) {
             if (fs.existsSync(singletonLock)) {
-                await log(userId, 'WARN', 'SingletonLock terdeteksi. Akan hapus seluruh session folder.');
+                await log(userId, 'WARN', 'SingletonLock terdeteksi. Melewati inisialisasi. Gunakan tombol "Reset Session" jika QR tidak muncul.');
+                return; // tidak hapus folder, tidak inisialisasi ulang
+            }
+
+            const files = fs.readdirSync(sessionPath);
+            if (files.length === 0) {
                 fs.rmSync(sessionPath, {
                     recursive: true,
                     force: true
                 });
-                await log(userId, 'INFO', 'Session folder berhasil dihapus karena lock file.');
-            } else {
-                const files = fs.readdirSync(sessionPath);
-                if (files.length === 0) {
-                    fs.rmSync(sessionPath, {
-                        recursive: true,
-                        force: true
-                    });
-                    await log(userId, 'INFO', 'Session folder kosong dihapus.');
-                }
+                await log(userId, 'INFO', 'Session folder kosong dihapus.');
             }
         }
 
-        // ⏳ Tunggu sampai file lock hilang
+        // Tunggu file lock hilang hanya jika sebelumnya ada lock (opsional)
         const success = await waitForFileRelease(singletonLock, 5000);
         if (!success) {
             await log(userId, 'ERROR', 'Gagal memulai sesi: SingletonLock tidak hilang setelah 5 detik.');
             return;
         }
-
     } catch (err) {
         await log(userId, 'ERROR', `Gagal mengecek/menghapus session folder: ${err.message}`);
         return;
@@ -162,12 +157,24 @@ async function startSession(userId) {
 
     client.on('auth_failure', async () => {
         sessions[userId].status = 'auth_failure';
+
         emitToSocket(userId, 'session:update', {
             userId,
             status: 'auth_failure'
         });
+
         removeClient(userId);
         qrCodes.delete(userId);
+
+        const sessionPath = path.join(__dirname, '../sessions', `session-${userId}`);
+        if (fs.existsSync(sessionPath)) {
+            fs.rmSync(sessionPath, {
+                recursive: true,
+                force: true
+            });
+            await log(userId, 'INFO', 'Session folder dihapus karena auth failure');
+        }
+
         await log(userId, 'ERROR', 'Authentication failed.');
     });
 

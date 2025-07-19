@@ -5,7 +5,7 @@
             <div class="card">
             <div class="card-body profile-card pt-4 d-flex flex-column align-items-center">
 
-                <img src="<%= user.profile_image || '/assets/img/profile-img.jpg' %>" alt="Profile" class="rounded-circle">
+                <img src="<%= user.profile_image || '/assets/img/profile.png' %>" alt="Profile" class="rounded-circle">
                 <h2><%= user.name %></h2>
                 <h3><%= user.username %></h3>
             </div>
@@ -22,7 +22,7 @@
                         <div class="row mb-3">
                             <label class="col-md-4 col-lg-3 col-form-label">Profile Image</label>
                             <div class="col-md-8 col-lg-9">
-                                <img id="avatarPreview" src="<%= user.profile_image || '/assets/img/profile-img.jpg' %>" alt="Profile" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
+                                <img id="avatarPreview" src="<%= user.profile_image || '/assets/img/profile.png' %>" alt="Profile" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
                                 <input type="file" name="avatar" id="avatarInput" class="d-none" accept="image/*">
 
                                 <div class="pt-2">
@@ -184,9 +184,9 @@
             }
 
             if (newPassword.value === renewPassword.value) {
-            icon.className = 'bi bi-check-circle-fill text-success'; // ✅ cocok
+            icon.className = 'bi bi-check-circle-fill text-success';
             } else {
-            icon.className = 'bi bi-x-circle-fill text-danger'; // ❌ tidak cocok
+            icon.className = 'bi bi-x-circle-fill text-danger';
             }
         }
 

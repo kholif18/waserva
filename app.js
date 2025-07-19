@@ -17,7 +17,6 @@ const {
 const {
   setSocketInstance
 } = require('./controllers/whatsappSessionController');
-const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
 // Inisialisasi Express & Socket.IO
 const app = express();
@@ -112,7 +111,10 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
+const authRoutes = require('./routes/auth');
 const mainRoutes = require('./routes');
+
+app.use('/', authRoutes);
 app.use('/', mainRoutes);
 
 // untuk restart session

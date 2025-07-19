@@ -20,6 +20,14 @@ async function sendMessage(req, res) {
         phone,
         message
     } = req.body;
+
+    if (!phone || !message) {
+        return res.status(400).json({
+            success: false,
+            error: 'Phone dan message wajib diisi.'
+        });
+    }
+
     const source = 'panel';
 
     const result = await whatsappService.sendText(userId, phone, message, source);
@@ -33,6 +41,13 @@ async function sendMedia(req, res) {
         fileUrl,
         caption
     } = req.body;
+    if (!phone || !fileUrl) {
+        return res.status(400).json({
+            success: false,
+            error: 'Phone dan fileUrl wajib diisi.'
+        });
+    }
+
     const source = 'panel';
 
     const result = await whatsappService.sendMediaFromUrl(userId, phone, fileUrl, caption, source);
@@ -48,6 +63,13 @@ const sendMediaUpload = [
             caption
         } = req.body;
         const file = req.file;
+        if (!phone || !file) {
+            return res.status(400).json({
+                success: false,
+                error: 'Phone dan file wajib diisi.'
+            });
+        }
+
         const source = 'panel';
 
         const result = await whatsappService.sendMediaFromUpload(userId, phone, file, caption, source);
@@ -61,6 +83,12 @@ async function sendGroupMessage(req, res) {
         groupName,
         message
     } = req.body;
+    if (!groupName || !message) {
+        return res.status(400).json({
+            success: false,
+            error: 'Nama grup dan pesan wajib diisi.'
+        });
+    }
     const source = 'panel';
 
     const result = await whatsappService.sendToGroup(userId, groupName, message, source);
@@ -74,6 +102,12 @@ async function sendBulkMessage(req, res) {
         message,
         delay = 1000
     } = req.body;
+    if (!Array.isArray(phones) || phones.length === 0 || !message) {
+        return res.status(400).json({
+            success: false,
+            error: 'Daftar nomor dan pesan wajib diisi.'
+        });
+    }
     const source = 'panel';
 
     const result = await whatsappService.sendBulk(userId, phones, message, delay, source);
