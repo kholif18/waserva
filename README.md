@@ -1,4 +1,4 @@
-# 🟢 Waserva
+# Waserva
 
 **Waserva** adalah sistem pengelolaan WhatsApp multi-user berbasis web, dibangun dengan Node.js, Express, Sequelize, dan WhatsApp Web JS. Aplikasi ini memungkinkan pengguna untuk mengelola sesi WhatsApp, mengirim pesan (teks, media, bulk, grup), serta melihat log dan histori pesan dengan kontrol penuh.
 
