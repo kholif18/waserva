@@ -117,16 +117,6 @@ const mainRoutes = require('./routes');
 app.use('/', authRoutes);
 app.use('/', mainRoutes);
 
-// untuk restart session
-
-// Pastikan folder 'sessions/' tersedia
-const sessionPath = path.join(__dirname, 'sessions');
-if (!fs.existsSync(sessionPath)) {
-  fs.mkdirSync(sessionPath, {
-    recursive: true
-  });
-}
-
 // Start App
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
@@ -139,6 +129,7 @@ server.listen(PORT, () => {
     console.log('Database connected.');
 
     // Jalankan session WhatsApp setelah DB siap
+    whatsappService.enableInitActiveSessions();
     await whatsappService.initActiveSessions();
     console.log('All WhatsApp sessions initialized.');
   } catch (error) {

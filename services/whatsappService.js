@@ -62,23 +62,35 @@ async function waitForFileRelease(filePath, timeout = 5000) {
     return true;
 }
 
+const sessionBasePath = path.join(__dirname, '../sessions');
+
 async function startSession(userId) {
     await log(userId, 'INFO', 'Memulai startSession()');
-    userId = getSessionKey(userId);
 
-    if (clients.has(userId)) {
+    const sessionKey = getSessionKey(userId);
+    const sessionPath = path.join(sessionBasePath, `session-${sessionKey}`);
+    const singletonLock = path.join(sessionPath, 'SingletonLock');
+
+    // Cegah duplikat
+    if (clients.has(sessionKey)) {
         await log(userId, 'INFO', 'Session sudah ada, tidak diinisialisasi ulang');
         return;
     }
 
-    const sessionPath = path.join(__dirname, '../sessions', `session-${userId}`);
-    const singletonLock = path.join(sessionPath, 'SingletonLock');
+    // Buat folder 'sessions/' jika belum ada (manual, bukan biarkan LocalAuth)
+    if (!fs.existsSync(sessionBasePath)) {
+        console.log('📁 Folder sessions/ belum ada. Membuat secara manual...');
+        fs.mkdirSync(sessionBasePath, {
+            recursive: true
+        });
+    }
 
+    // Tangani folder session kosong atau ter-lock
     try {
         if (fs.existsSync(sessionPath)) {
             if (fs.existsSync(singletonLock)) {
-                await log(userId, 'WARN', 'SingletonLock terdeteksi. Melewati inisialisasi. Gunakan tombol "Reset Session" jika QR tidak muncul.');
-                return; // tidak hapus folder, tidak inisialisasi ulang
+                await log(userId, 'WARN', 'SingletonLock terdeteksi. Gunakan Reset Session.');
+                return;
             }
 
             const files = fs.readdirSync(sessionPath);
@@ -91,7 +103,6 @@ async function startSession(userId) {
             }
         }
 
-        // Tunggu file lock hilang hanya jika sebelumnya ada lock (opsional)
         const success = await waitForFileRelease(singletonLock, 5000);
         if (!success) {
             await log(userId, 'ERROR', 'Gagal memulai sesi: SingletonLock tidak hilang setelah 5 detik.');
@@ -102,10 +113,12 @@ async function startSession(userId) {
         return;
     }
 
+    // Sekarang mulai WA Client
+    console.log(`📲 Membuat WhatsApp client untuk userId ${userId}`);
     const client = new Client({
         authStrategy: new LocalAuth({
-            clientId: userId,
-            dataPath: path.join(__dirname, '../sessions')
+            clientId: sessionKey,
+            dataPath: sessionBasePath // hanya dipakai saat benar-benar dibutuhkan
         }),
         puppeteer: {
             headless: true,
@@ -121,20 +134,21 @@ async function startSession(userId) {
         }
     });
 
-    sessions[userId] = {
+    sessions[sessionKey] = {
         client,
         status: 'starting'
     };
-
     emitToSocket(userId, 'session:update', {
         userId,
         status: 'starting'
     });
 
+    // Listener selanjutnya tetap sama...
     client.on('qr', async qr => {
         const qrImage = await qrcode.toDataURL(qr);
-        qrCodes.set(userId, qrImage);
-        sessions[userId].status = 'qr';
+        qrCodes.set(sessionKey, qrImage);
+        sessions[sessionKey].status = 'qr';
+
         emitToSocket(userId, 'session:update', {
             userId,
             status: 'qr'
@@ -143,11 +157,12 @@ async function startSession(userId) {
             userId,
             qr: qrImage
         });
-        setTimeout(() => qrCodes.delete(userId), 60000);
+
+        setTimeout(() => qrCodes.delete(sessionKey), 60000);
     });
 
     client.on('ready', async () => {
-        sessions[userId].status = 'connected';
+        sessions[sessionKey].status = 'connected';
         emitToSocket(userId, 'session:update', {
             userId,
             status: 'connected'
@@ -156,17 +171,14 @@ async function startSession(userId) {
     });
 
     client.on('auth_failure', async () => {
-        sessions[userId].status = 'auth_failure';
-
+        sessions[sessionKey].status = 'auth_failure';
         emitToSocket(userId, 'session:update', {
             userId,
             status: 'auth_failure'
         });
 
-        removeClient(userId);
-        qrCodes.delete(userId);
-
-        const sessionPath = path.join(__dirname, '../sessions', `session-${userId}`);
+        removeClient(sessionKey);
+        qrCodes.delete(sessionKey);
         if (fs.existsSync(sessionPath)) {
             fs.rmSync(sessionPath, {
                 recursive: true,
@@ -179,7 +191,7 @@ async function startSession(userId) {
     });
 
     client.on('disconnected', async reason => {
-        sessions[userId].status = 'disconnected';
+        sessions[sessionKey].status = 'disconnected';
         emitToSocket(userId, 'session:update', {
             userId,
             status: 'disconnected',
@@ -190,22 +202,22 @@ async function startSession(userId) {
             await client.destroy();
         } catch {}
 
-        removeClient(userId);
-        qrCodes.delete(userId);
+        removeClient(sessionKey);
+        qrCodes.delete(sessionKey);
 
         if (reason !== 'LOGOUT') setTimeout(() => startSession(userId), 5000);
-
         await log(userId, 'WARN', `Disconnected: ${reason}`);
     });
 
     client.on('message', async msg => {
         const webhookUrl = process.env.WEBHOOK_URL;
         if (!webhookUrl) return;
+
         try {
             await axios.post(webhookUrl, {
-                session: userId,
+                session: sessionKey,
                 from: msg.from,
-                to: msg.to || userId,
+                to: msg.to || sessionKey,
                 body: msg.body,
                 type: msg.type,
                 timestamp: msg.timestamp,
@@ -218,7 +230,7 @@ async function startSession(userId) {
 
     try {
         await client.initialize();
-        setClient(userId, client);
+        setClient(sessionKey, client);
         await log(userId, 'INFO', 'client.initialize() selesai');
     } catch (err) {
         await log(userId, 'ERROR', `Gagal memulai sesi WA: ${err.message}`);
@@ -262,8 +274,20 @@ function getStatus(userId) {
     return sessions[getSessionKey(userId)]?.status || 'not_initialized';
 }
 
+let isSafeToInit = false;
+
+function enableInitActiveSessions() {
+    isSafeToInit = true;
+}
+
 async function initActiveSessions() {
+    if (!isSafeToInit) {
+        console.warn('⚠️ initActiveSessions() diblokir. Panggil enableInitActiveSessions() terlebih dahulu.');
+        return;
+    }
+
     const users = await User.findAll();
+    console.log('[initActiveSessions] User yang ditemukan di DB:', users.map(u => u.id));
     for (const user of users) {
         try {
             await startSession(user.id);
