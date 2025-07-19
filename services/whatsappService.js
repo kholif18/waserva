@@ -862,6 +862,7 @@ module.exports = {
     logoutSession,
     getStatus,
     getClient,
+    enableInitActiveSessions,
     initActiveSessions,
     sendText,
     sendMediaFromUrl,

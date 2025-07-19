@@ -25,3 +25,4 @@ logs/
 public/qr/*.png
 
 sessions/
+.wwebjs_cache/
