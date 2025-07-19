@@ -1,6 +1,17 @@
 const logService = require('../services/logService');
 const whatsappService = require('../services/whatsappService');
 
+let io = null;
+
+function setSocketInstance(socketIoInstance) {
+    io = socketIoInstance;
+    whatsappService.setSocketInstance(socketIoInstance);
+}
+
+function getSessionId(req) {
+    return req.session?.user?.id?.toString();
+}
+
 function renderLoginWhatsApp(req, res) {
     if (!req.session.user) {
         return res.redirect('/login');
@@ -9,18 +20,40 @@ function renderLoginWhatsApp(req, res) {
     res.render('pages/login-whatsapp', {
         title: 'Login WhatsApp',
         activePage: 'login-whatsapp',
-        user: req.session.user
     });
 }
 
-function setSocketInstance(socketIoInstance) {
-    whatsappService.setSocketInstance(socketIoInstance);
+// Fungsi untuk dipanggil dari luar (misalnya: login, register)
+async function startUserSession(userId) {
+    try {
+        const result = await whatsappService.startSession(userId.toString());
+
+        // Kirim event socket manual jika perlu
+        if (io) {
+            io.to(userId.toString()).emit('session:update', {
+                session: userId.toString(),
+                status: 'starting'
+            });
+        }
+
+        return {
+            success: true,
+            message: result
+        };
+    } catch (err) {
+        await logService.createLog({
+            userId,
+            level: 'ERROR',
+            message: `Gagal memulai sesi WA: ${err.message}`
+        });
+        return {
+            success: false,
+            error: err.message || err
+        };
+    }
 }
 
-function getSessionId(req) {
-    return req.session?.user?.id?.toString();
-}
-
+// Endpoint HTTP (gunakan Express `req`, `res`)
 async function startSession(req, res) {
     const sessionId = getSessionId(req);
     if (!sessionId) {
@@ -29,15 +62,16 @@ async function startSession(req, res) {
         });
     }
 
-    try {
-        const result = await whatsappService.startSession(sessionId);
+    const result = await startUserSession(sessionId);
+    if (result.success) {
         res.json({
-            message: result
+            success: true,
+            message: result.message
         });
-    } catch (err) {
+    } else {
         res.status(500).json({
-            error: 'Gagal memulai sesi',
-            detail: err.message || err
+            success: false,
+            error: result.error
         });
     }
 }
@@ -108,5 +142,6 @@ module.exports = {
     getSessionStatus,
     logoutSession,
     listSessions,
-    renderLoginWhatsApp
+    renderLoginWhatsApp,
+    startUserSession
 };

@@ -31,7 +31,7 @@ exports.index = async (req, res) => {
 
     res.render('pages/settings', {
         title: 'System Configuration',
-        user: req.session.user,
+        activePage: 'settings',
         settings
     });
 };

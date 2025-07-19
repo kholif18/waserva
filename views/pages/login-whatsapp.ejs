@@ -11,9 +11,12 @@
                             <!-- QR code akan muncul di sini -->
                         </div>
                         <p>QR Code akan diperbarui setiap 60 detik</p>
-                        <button id="refresh-qr" class="btn btn-success mt-2">
-                            <i class="bx bx-sync"></i> Generate New QR Code
-                        </button>
+                        <div class="d-flex justify-content-center align-items-center">
+                            <button id="refresh-qr" class="btn btn-primary mt-2" data-mode="start">
+                                <i class="bx bx-sync"></i> Generate New QR Code
+                            </button>
+                        </div>
+
                     </div>
                 </div>
                 <div class="col-12 col-md-6">
@@ -39,7 +42,7 @@
             </div>
             <!-- Form Logout WhatsApp -->
             <div class="card-footer" id="whatsapp-logout" style="display: none;">
-                <button type="submit" class="btn btn-danger">
+                <button id="logout-wa" type="submit" class="btn btn-danger">
                     <i class="fas fa-sign-out-alt"></i> Logout WhatsApp
                 </button>
             </div>
@@ -47,62 +50,93 @@
     </div>
 
     <script>
-        const sessionName = "<%= user?.id %>"; // atau ambil dari user / input
-
-        const socket = io({
-            query: { session: sessionName }
-        });
+        const sessionName = "<%= user?.id %>";
+        const socket = io({ query: { session: sessionName } });
 
         const qrContainer = document.getElementById('qr-code-container');
         const statusText = document.getElementById('status-text');
         const logoutButton = document.getElementById('whatsapp-logout');
+        const qrButton = document.getElementById('refresh-qr');
+        const qrArea = document.getElementById('qr-area');
+        const lastConnectedEl = document.getElementById('last-connected');
 
         function updateStatus(text, color = 'black') {
             statusText.textContent = text;
             statusText.style.color = color;
         }
-        
+
+        function formatNow() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('id-ID').replaceAll('/', '-');
+            const timeStr = now.toLocaleTimeString('id-ID', { hour12: false });
+            return `${dateStr} ${timeStr}`;
+        }
+
+        function setQRButton(mode) {
+            const config = {
+                start: {
+                    html: `<i class="bx bx-play"></i> Start Session`,
+                    class: 'btn btn-primary mt-2',
+                    dataMode: 'start'
+                },
+                refresh: {
+                    html: `<i class="bx bx-sync"></i> Generate New QR Code`,
+                    class: 'btn btn-primary mt-2',
+                    dataMode: 'refresh'
+                }
+            };
+            const c = config[mode];
+            qrButton.innerHTML = c.html;
+            qrButton.className = c.class;
+            qrButton.setAttribute('data-mode', c.dataMode);
+            qrButton.style.display = 'block';
+            qrButton.disabled = false;
+        }
+
+        function showConnectedState() {
+            updateStatus("CONNECTED", 'green');
+            logoutButton.style.display = 'block';
+            qrButton.style.display = 'none';
+            if (qrArea) qrArea.style.display = 'none';
+            lastConnectedEl.textContent = `Last Connected: ${formatNow()}`;
+        }
+
+        function showDisconnectedState(status) {
+            updateStatus(status.toUpperCase(), 'orange');
+            logoutButton.style.display = 'none';
+            if (qrArea) qrArea.style.display = 'block';
+            lastConnectedEl.textContent = '';
+
+            if (status === 'disconnected') {
+                setQRButton('start');
+            } else {
+                setQRButton('refresh'); // For 'qr' or 'initializing'
+            }
+        }
+
         socket.on('connect', () => {
             updateStatus("Terkoneksi ke server", 'green');
         });
 
-        socket.on('session:update', (data) => {
-            const { status } = data;
-            updateStatus(status.toUpperCase(), status === 'connected' ? 'green' : 'orange');
-
-            const qrArea = document.getElementById('qr-area');
-            const lastConnectedEl = document.getElementById('last-connected');
-
+        socket.on('session:update', ({ status }) => {
             if (status === 'connected') {
-                logoutButton.style.display = 'block';
-                if (qrArea) qrArea.style.display = 'none';
-
-                // Tampilkan waktu terakhir terkoneksi
-                const now = new Date();
-                const dateStr = now.toLocaleDateString('id-ID', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                }).replaceAll('/', '-');
-                const timeStr = now.toLocaleTimeString('id-ID', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                }).replace(/\./g, ':');
-                lastConnectedEl.textContent = `Last Connected: ${dateStr} ${timeStr}`;
+                showConnectedState();
             } else {
-                logoutButton.style.display = 'none';
-                if (qrArea) qrArea.style.display = 'block';
-                lastConnectedEl.textContent = '';
+                showDisconnectedState(status);
             }
         });
 
-        socket.on('session:qr', (data) => {
-            qrContainer.innerHTML = `<img src="${data.qr}" alt="QR Code" class="img-fluid" />`;
+        socket.on('session:qr', ({ qr }) => {
+            qrContainer.innerHTML = `<img src="${qr}" alt="QR Code" class="img-fluid" />`;
         });
 
-        document.getElementById('refresh-qr').addEventListener('click', async () => {
-            updateStatus("Meminta QR baru...", 'gray');
+        // Tombol QR multifungsi
+        qrButton.addEventListener('click', async () => {
+            const mode = qrButton.getAttribute('data-mode');
+            qrButton.disabled = true;
+
+            updateStatus(mode === 'start' ? "Memulai sesi..." : "Meminta QR baru...", 'gray');
+
             try {
                 const res = await fetch('/wa/start', {
                     method: 'POST',
@@ -110,14 +144,16 @@
                     credentials: 'include'
                 });
                 const data = await res.json();
-                updateStatus("QR diminta ulang...");
+                updateStatus(mode === 'start' ? "Sesi dimulai..." : "QR diminta ulang...");
             } catch (err) {
-                updateStatus("Gagal meminta QR baru", 'red');
+                updateStatus("Gagal memproses permintaan", 'red');
                 console.error(err);
             }
+
+            qrButton.disabled = false;
         });
 
-        // Log Out
+        // Tombol logout
         document.getElementById('logout-wa')?.addEventListener('click', async () => {
             const res = await fetch(`/wa/logout?session=${sessionName}`, {
                 credentials: 'include'
@@ -131,4 +167,6 @@
             }
         });
     </script>
+
+
 </section>

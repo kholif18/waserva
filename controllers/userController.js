@@ -1,5 +1,7 @@
 const logService = require('../services/logService');
 const userService = require('../services/userService');
+const validator = require('validator');
+const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
 
@@ -10,6 +12,7 @@ exports.getMyProfile = async (req, res) => {
 
         res.render('pages/profile', {
             title: 'My Profile',
+            activePage: 'profile',
             user,
         });
     } catch (err) {
@@ -32,23 +35,64 @@ exports.updateMyProfile = async (req, res) => {
             remove_avatar
         } = req.body;
 
-        if (newpassword && newpassword !== renewpassword) {
-            req.flash('error', 'New Password does not match Re-enter New Password.');
+        const errors = [];
+
+        // Validasi nama
+        if (!name || name.trim().length < 2) {
+            errors.push('Nama minimal 2 karakter.');
+        }
+
+        // Validasi username
+        if (!username || username.trim().length < 3) {
+            errors.push('Username minimal 3 karakter.');
+        }
+
+        // Validasi email
+        if (!email || !validator.isEmail(email)) {
+            errors.push('Email tidak valid.');
+        }
+
+        // Validasi password baru jika diisi
+        if (newpassword) {
+            if (newpassword !== renewpassword) {
+                errors.push('Password baru tidak cocok dengan konfirmasi.');
+            }
+
+            const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+            if (!strongPasswordRegex.test(newpassword)) {
+                errors.push('Password baru harus minimal 8 karakter dan mengandung huruf besar, huruf kecil, angka, serta simbol.');
+            }
+        }
+
+        // Ambil user saat ini
+        const user = await userService.getUserById(userId);
+
+        // Cek username dan email unik jika berubah
+        if (username !== user.username || email !== user.email) {
+            const exists = await userService.findUserByUsernameOrEmail(username, email, userId);
+            if (exists) {
+                if (exists.username === username) errors.push('Username sudah digunakan.');
+                if (exists.email === email) errors.push('Email sudah digunakan.');
+            }
+        }
+
+        // Jika ada error, tampilkan flash
+        if (errors.length > 0) {
+            errors.forEach(e => req.flash('error', e));
             return res.redirect('/profile');
         }
 
+        // Siapkan data update
         const updateData = {
-            name,
-            username,
-            phone,
-            email,
-            address
+            name: name.trim(),
+            username: username.trim(),
+            phone: phone ? phone.trim() : null,
+            email: email.trim(),
+            address: address ? address.trim() : null
         };
-        const user = await userService.getUserById(userId); // Ambil user 1x di awal
 
-        // Password update
+        // Password hash jika ada
         if (newpassword) {
-            const bcrypt = require('bcryptjs');
             updateData.password = await bcrypt.hash(newpassword, 10);
         }
 
@@ -61,36 +105,33 @@ exports.updateMyProfile = async (req, res) => {
             fs.renameSync(req.file.path, filepath);
             updateData.profile_image = `/uploads/${filename}`;
 
-            // Hapus file lama jika ada
             if (user.profile_image && fs.existsSync('public' + user.profile_image)) {
                 fs.unlinkSync('public' + user.profile_image);
             }
 
-            req.session.user.profile_image = updateData.profile_image; 
+            req.session.user.profile_image = updateData.profile_image;
         }
 
         // Handle avatar removal
         if (remove_avatar === '1') {
             updateData.profile_image = null;
-
             if (user.profile_image && fs.existsSync('public' + user.profile_image)) {
                 fs.unlinkSync('public' + user.profile_image);
             }
-
-            req.session.user.profile_image = null; 
+            req.session.user.profile_image = null;
         }
 
-        // Simpan ke database
+        // Simpan ke DB
         await userService.updateUserProfile(userId, updateData);
 
-        // Update session lain jika nama/username berubah
-        req.session.user.name = name;
-        req.session.user.username = username;
+        // Update sesi
+        req.session.user.name = updateData.name;
+        req.session.user.username = updateData.username;
 
         await logService.createLog({
             userId,
             level: 'INFO',
-            message: `User ${username} updated their profile${newpassword ? ' and changed password' : ''}.`
+            message: `User ${updateData.username} updated profile${newpassword ? ' and changed password' : ''}.`
         });
 
         req.flash('success', 'Profil berhasil diperbarui.');

@@ -107,6 +107,7 @@ exports.index = async (req, res) => {
 
     res.render('pages/history', {
         history,
+        activePage: 'history',
         pagination,
         req
     });

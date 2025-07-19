@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const expressLayouts = require('express-ejs-layouts');
@@ -7,10 +8,16 @@ const http = require('http');
 const {
   Server
 } = require('socket.io');
-
+const fs = require('fs');
+const whatsappService = require('./services/whatsappService');
+const {
+  sequelize,
+  User
+} = require('./models');
 const {
   setSocketInstance
 } = require('./controllers/whatsappSessionController');
+const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
 // Inisialisasi Express & Socket.IO
 const app = express();
@@ -69,14 +76,31 @@ app.use(session({
   secret: 'rahasia-super-aman',
   resave: false,
   saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true
+  }
 }));
+
 app.use(flash());
 
 // Middleware global (user & flash)
-app.use((req, res, next) => {
-  res.locals.user = req.session.user || null;
+app.use(async (req, res, next) => {
   res.locals.success = req.flash('success') || [];
   res.locals.error = req.flash('error') || [];
+
+  if (req.session.user?.id) {
+    try {
+      const user = await User.findByPk(req.session.user.id);
+      res.locals.user = user;
+    } catch (err) {
+      console.error('Gagal memuat user dari DB:', err);
+      res.locals.user = null;
+    }
+  } else {
+    res.locals.user = null;
+  }
+
   next();
 });
 
@@ -91,8 +115,31 @@ app.use(express.static(path.join(__dirname, 'public')));
 const mainRoutes = require('./routes');
 app.use('/', mainRoutes);
 
+// untuk restart session
+
+// Pastikan folder 'sessions/' tersedia
+const sessionPath = path.join(__dirname, 'sessions');
+if (!fs.existsSync(sessionPath)) {
+  fs.mkdirSync(sessionPath, {
+    recursive: true
+  });
+}
+
 // Start App
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`waserva is running on http://localhost:${PORT}`);
 });
+
+(async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('Database connected.');
+
+    // Jalankan session WhatsApp setelah DB siap
+    await whatsappService.initActiveSessions();
+    console.log('All WhatsApp sessions initialized.');
+  } catch (error) {
+    console.error('Error during server startup:', error);
+  }
+})();

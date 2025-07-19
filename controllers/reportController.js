@@ -64,6 +64,7 @@ exports.index = async (req, res) => {
 
     res.render('pages/report', {
         report,
+        activePage: 'report',
         pagination,
         req
     });

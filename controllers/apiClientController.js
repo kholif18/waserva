@@ -37,6 +37,7 @@ exports.index = async (req, res) => {
 
         res.render('pages/api-clients', {
             title: 'API Clients',
+            activePage: 'api-clients',
             user,
             clients: formattedClients
         });

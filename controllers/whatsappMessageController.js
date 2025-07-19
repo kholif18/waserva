@@ -11,7 +11,6 @@ function viewMessagePage(req, res) {
     res.render('pages/message', {
         title: 'Message Tester',
         activePage: 'message',
-        user: req.session.user
     });
 }
 

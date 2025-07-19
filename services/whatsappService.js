@@ -11,40 +11,81 @@ const {
     Op
 } = require('sequelize');
 const logService = require('./logService');
-const {
-    getClient,
-    setClient,
-    removeClient
-} = require('../utils/whatsappClient');
 const settingService = require('./settingService');
 const {
     History,
-    User
+    User,
 } = require('../models');
+const log = require('../utils/logger');
 const {
     normalizePhoneNumber
 } = require('../utils/phone');
+const {
+    retrySend
+} = require('../utils/retry');
+const {
+    isQueueFull,
+    increaseQueue,
+    decreaseQueue
+} = require('../utils/messageQueue');
+const sessionManager = require('./sessionManager');
+const {
+    clients,
+    sessions,
+    qrCodes,
+    getClient,
+    getSessionKey,
+    setClient,
+    removeClient
+} = require('./sessionManager');
 
 let io = null;
-const clients = global.clients = global.clients || new Map();
-const sessions = global.sessions = global.sessions || {};
-const qrCodes = global.qrCodes = global.qrCodes || new Map();
 
 function setSocketInstance(ioInstance) {
     io = ioInstance;
-}
-
-function getSessionKey(userId) {
-    return userId.toString();
 }
 
 function emitToSocket(userId, event, data) {
     if (io) io.to(getSessionKey(userId)).emit(event, data);
 }
 
+function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function waitForFileRelease(filePath, timeout = 5000) {
+    const start = Date.now();
+    while (fs.existsSync(filePath)) {
+        if (Date.now() - start > timeout) return false;
+        await wait(300);
+    }
+    return true;
+}
+
 async function startSession(userId) {
+    await log(userId, 'INFO', 'Memulai startSession()');
     userId = getSessionKey(userId);
-    if (clients.has(userId)) return;
+
+    if (clients.has(userId)) {
+        await log(userId, 'INFO', 'Session sudah ada, tidak diinisialisasi ulang');
+        return;
+    }
+
+    const sessionPath = path.join(__dirname, '../sessions', `session-${userId}`);
+    const singletonLock = path.join(sessionPath, 'SingletonLock');
+
+    if (fs.existsSync(singletonLock) && !clients.has(userId)) {
+        try {
+            fs.rmSync(sessionPath, {
+                recursive: true,
+                force: true
+            });
+            await log(userId, 'INFO', 'Session folder dihapus karena ada SingletonLock dan belum aktif');
+        } catch (err) {
+            await log(userId, 'ERROR', `Gagal menghapus session folder: ${err.message}`);
+            return;
+        }
+    }
 
     const client = new Client({
         authStrategy: new LocalAuth({
@@ -69,6 +110,7 @@ async function startSession(userId) {
         client,
         status: 'starting'
     };
+
     emitToSocket(userId, 'session:update', {
         userId,
         status: 'starting'
@@ -78,6 +120,10 @@ async function startSession(userId) {
         const qrImage = await qrcode.toDataURL(qr);
         qrCodes.set(userId, qrImage);
         sessions[userId].status = 'qr';
+        emitToSocket(userId, 'session:update', {
+            userId,
+            status: 'qr'
+        });
         emitToSocket(userId, 'session:qr', {
             userId,
             qr: qrImage
@@ -91,11 +137,7 @@ async function startSession(userId) {
             userId,
             status: 'connected'
         });
-        await logService.createLog({
-            userId: parseInt(userId),
-            level: 'INFO',
-            message: 'WhatsApp session connected.'
-        });
+        await log(userId, 'INFO', 'WhatsApp session connected.');
     });
 
     client.on('auth_failure', async () => {
@@ -106,11 +148,7 @@ async function startSession(userId) {
         });
         removeClient(userId);
         qrCodes.delete(userId);
-        await logService.createLog({
-            userId: parseInt(userId),
-            level: 'ERROR',
-            message: 'Authentication failed.'
-        });
+        await log(userId, 'ERROR', 'Authentication failed.');
     });
 
     client.on('disconnected', async reason => {
@@ -120,19 +158,17 @@ async function startSession(userId) {
             status: 'disconnected',
             reason
         });
+
         try {
             await client.destroy();
         } catch {}
+
         removeClient(userId);
         qrCodes.delete(userId);
 
         if (reason !== 'LOGOUT') setTimeout(() => startSession(userId), 5000);
 
-        await logService.createLog({
-            userId: parseInt(userId),
-            level: 'WARN',
-            message: `Disconnected: ${reason}`
-        });
+        await log(userId, 'WARN', `Disconnected: ${reason}`);
     });
 
     client.on('message', async msg => {
@@ -149,38 +185,48 @@ async function startSession(userId) {
                 isGroupMsg: msg.from.endsWith('@g.us'),
             });
         } catch (err) {
-            console.error('❌ Webhook failed:', err.message);
+            await log(userId, 'ERROR', `Webhook failed: ${err.message}`);
         }
     });
 
-    await client.initialize();
-    setClient(userId, client);
+    try {
+        await client.initialize();
+        setClient(userId, client);
+        await log(userId, 'INFO', 'client.initialize() selesai');
+    } catch (err) {
+        await log(userId, 'ERROR', `Gagal memulai sesi WA: ${err.message}`);
+    }
 }
 
 async function logoutSession(userId) {
     userId = getSessionKey(userId);
     const session = sessions[userId];
-    if (!session || session.status !== 'connected') return false;
+    if (!session || session.status !== 'connected') {
+        await log(userId, 'WARN', 'Logout gagal: tidak ada sesi aktif.');
+        return false;
+    }
 
     try {
         await session.client.logout();
         await session.client.destroy();
+
         delete sessions[userId];
         removeClient(userId);
         qrCodes.delete(userId);
-        const sessionPath = path.join(__dirname, '../sessions', userId);
-        if (fs.existsSync(sessionPath)) fs.rmSync(sessionPath, {
-            recursive: true,
-            force: true
-        });
-        await logService.createLog({
-            userId: parseInt(userId),
-            level: 'INFO',
-            message: 'Logged out successfully.'
-        });
+
+        const sessionPath = path.join(__dirname, '../sessions', `session-${userId}`);
+        if (fs.existsSync(sessionPath)) {
+            fs.rmSync(sessionPath, {
+                recursive: true,
+                force: true
+            });
+            await log(userId, 'INFO', 'Folder sesi berhasil dihapus');
+        }
+
+        await log(userId, 'INFO', 'Logout berhasil');
         return true;
     } catch (err) {
-        console.error('Logout failed:', err);
+        await log(userId, 'ERROR', `Logout gagal: ${err.message}`);
         return false;
     }
 }
@@ -192,18 +238,21 @@ function getStatus(userId) {
 async function initActiveSessions() {
     const users = await User.findAll();
     for (const user of users) {
-        await startSession(user.id);
+        try {
+            await startSession(user.id);
+            await log(user.id, 'INFO', 'Session dimulai otomatis saat inisialisasi server');
+        } catch (err) {
+            await log(user.id, 'ERROR', `Gagal memulai session saat init: ${err.message}`);
+        }
     }
 }
 
 // ========== Messaging ==========
 
-// Helper delay
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Cek apakah user mencapai batas rate limit
 async function isRateLimited(userId, limit, decaySeconds) {
     if (!limit || !decaySeconds) return false;
 
@@ -222,7 +271,6 @@ async function isRateLimited(userId, limit, decaySeconds) {
     return count >= limit;
 }
 
-// Ambil client dan semua setting user
 async function getSettingsAndClient(userId) {
     try {
         const client = getClient(userId);
@@ -235,16 +283,14 @@ async function getSettingsAndClient(userId) {
             client,
             ...settings
         };
-
     } catch (err) {
-        console.error('Error in getSettingsAndClient:', err);
+        await log(userId, 'ERROR', `Gagal mengambil setting user: ${err.message}`);
         return {
             error: 'Gagal memuat setting pengguna'
         };
     }
 }
 
-// Kirim pesan teks WhatsApp
 async function sendText(userId, rawPhone, message, source = 'unknown') {
     const settingsResult = await getSettingsAndClient(userId);
     if (settingsResult.error) {
@@ -261,7 +307,8 @@ async function sendText(userId, rawPhone, message, source = 'unknown') {
         max_retry,
         retry_interval,
         rate_limit_limit,
-        rate_limit_decay
+        rate_limit_decay,
+        max_queue
     } = settingsResult;
 
     const phone = normalizePhoneNumber(rawPhone, country_code);
@@ -272,7 +319,6 @@ async function sendText(userId, rawPhone, message, source = 'unknown') {
         };
     }
 
-    // Cek rate limit
     const limited = await isRateLimited(userId, rate_limit_limit, rate_limit_decay);
     if (limited) {
         await logService.createLog({
@@ -287,7 +333,6 @@ async function sendText(userId, rawPhone, message, source = 'unknown') {
         };
     }
 
-    // Debug log saat development
     if (process.env.NODE_ENV !== 'production') {
         await logService.createLog({
             userId,
@@ -297,276 +342,467 @@ async function sendText(userId, rawPhone, message, source = 'unknown') {
                 normalized: phone,
                 timeout,
                 max_retry,
-                retry_interval
+                retry_interval,
+                rate_limit_limit,
+                rate_limit_decay,
+                max_queue
             })}`
         });
     }
 
-    let attempt = 0;
-    let lastError = null;
+    if (isQueueFull(userId, max_queue)) {
+        return {
+            success: false,
+            error: `Antrean penuh. Maksimum ${max_queue} pesan dapat diproses sekaligus.`
+        };
+    }
 
-    while (attempt <= max_retry) {
-        try {
-            const sendPromise = client.sendMessage(`${phone}@c.us`, message);
+    increaseQueue(userId);
+    try {
+        const result = await retrySend(
+            () => client.sendMessage(`${phone}@c.us`, message),
+            max_retry,
+            timeout,
+            retry_interval
+        );
 
-            await Promise.race([
-                sendPromise,
-                new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Timeout')), timeout * 1000)
-                )
-            ]);
+        await History.create({
+            userId,
+            phone,
+            message,
+            type: 'text',
+            status: result.success ? 'success' : 'failed',
+            source
+        });
 
-            await History.create({
-                userId,
-                phone,
-                message,
-                type: 'text',
-                status: 'success',
-                source
-            });
-
-            return {
+        return result.success ?
+            {
                 success: true
+            } :
+            {
+                success: false,
+                error: 'Gagal mengirim pesan',
+                detail: result.error
             };
 
-        } catch (err) {
-            lastError = err;
-            console.error(`❌ Error kirim pesan (attempt ${attempt}):`, err);
-
-            if (attempt === max_retry) {
-                await History.create({
-                    userId,
-                    phone,
-                    message,
-                    type: 'text',
-                    status: 'failed',
-                    source
-                });
-
-                return {
-                    success: false,
-                    error: 'Gagal mengirim pesan',
-                    detail: err.message
-                };
-            }
-
-            attempt++;
-            await delay(retry_interval * 1000);
-        }
+    } finally {
+        decreaseQueue(userId);
     }
 }
 
 async function sendMediaFromUrl(userId, rawPhone, fileUrl, caption, source = 'unknown') {
-    const {
-        client,
-        country_code,
-        error
-    } = await getSettingsAndClient(userId);
-    if (error) return {
-        success: false,
-        error
-    };
-
-    const phone = normalizePhoneNumber(rawPhone, country_code);
-    if (!phone) return {
-        success: false,
-        error: 'Nomor tidak valid'
-    };
-
-    try {
-        const media = await MessageMedia.fromUrl(fileUrl);
-        await client.sendMessage(`${phone}@c.us`, media, {
-            caption
-        });
-
-        await History.create({
-            userId,
-            phone,
-            message: caption || '[media]',
-            type: 'media',
-            status: 'success',
-            source
-        });
-        return {
-            success: true
-        };
-
-    } catch (err) {
-        await History.create({
-            userId,
-            phone,
-            message: caption || '[media]',
-            type: 'media',
-            status: 'failed',
-            source
-        });
+    const settingsResult = await getSettingsAndClient(userId);
+    if (settingsResult.error) {
         return {
             success: false,
-            error: 'Gagal mengirim media',
-            detail: err.message
+            error: settingsResult.error
         };
     }
-}
 
-async function sendMediaFromUpload(userId, rawPhone, file, caption, source = 'unknown') {
     const {
         client,
         country_code,
-        error
-    } = await getSettingsAndClient(userId);
-    if (error) return {
-        success: false,
-        error
-    };
+        timeout,
+        max_retry,
+        retry_interval,
+        rate_limit_limit,
+        rate_limit_decay,
+        max_queue
+    } = settingsResult;
 
     const phone = normalizePhoneNumber(rawPhone, country_code);
-    if (!phone) return {
-        success: false,
-        error: 'Nomor tidak valid'
-    };
+    if (!phone) {
+        return {
+            success: false,
+            error: 'Nomor tidak valid'
+        };
+    }
 
-    try {
-        const media = new MessageMedia(file.mimetype, file.buffer.toString('base64'), file.originalname);
-        await client.sendMessage(`${phone}@c.us`, media, {
-            caption
+    const limited = await isRateLimited(userId, rate_limit_limit, rate_limit_decay);
+    if (limited) {
+        await logService.createLog({
+            userId,
+            level: 'WARNING',
+            message: `Rate limit exceeded: Max ${rate_limit_limit} messages per ${rate_limit_decay}s.`
         });
+
+        return {
+            success: false,
+            error: `Rate limit exceeded. Max ${rate_limit_limit} messages per ${rate_limit_decay} seconds.`
+        };
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+        await logService.createLog({
+            userId,
+            level: 'DEBUG',
+            message: `[DEV] Kirim media: ${JSON.stringify({
+                rawPhone,
+                normalized: phone,
+                fileUrl,
+                caption,
+                timeout,
+                max_retry,
+                retry_interval,
+                rate_limit_limit,
+                rate_limit_decay,
+                max_queue
+            })}`
+        });
+    }
+
+    if (isQueueFull(userId, max_queue)) {
+        return {
+            success: false,
+            error: `Antrean penuh. Maksimum ${max_queue} pesan dapat diproses sekaligus.`
+        };
+    }
+
+    increaseQueue(userId);
+    try {
+        const result = await retrySend(
+            async () => {
+                    const media = await MessageMedia.fromUrl(fileUrl);
+                    await client.sendMessage(`${phone}@c.us`, media, {
+                        caption
+                    });
+                },
+                max_retry,
+                timeout,
+                retry_interval
+        );
+
+        await History.create({
+            userId,
+            phone,
+            message: caption || '[media]',
+            type: 'media',
+            status: result.success ? 'success' : 'failed',
+            source
+        });
+
+        return result.success ?
+            {
+                success: true
+            } :
+            {
+                success: false,
+                error: 'Gagal mengirim media',
+                detail: result.error
+            };
+
+    } finally {
+        decreaseQueue(userId);
+    }
+}
+async function sendMediaFromUpload(userId, rawPhone, file, caption, source = 'unknown') {
+    const settingsResult = await getSettingsAndClient(userId);
+    if (settingsResult.error) {
+        return {
+            success: false,
+            error: settingsResult.error
+        };
+    }
+
+    const {
+        client,
+        country_code,
+        timeout,
+        max_retry,
+        retry_interval,
+        rate_limit_limit,
+        rate_limit_decay,
+        max_queue
+    } = settingsResult;
+
+    const phone = normalizePhoneNumber(rawPhone, country_code);
+    if (!phone) {
+        return {
+            success: false,
+            error: 'Nomor tidak valid'
+        };
+    }
+
+    const limited = await isRateLimited(userId, rate_limit_limit, rate_limit_decay);
+    if (limited) {
+        await logService.createLog({
+            userId,
+            level: 'WARNING',
+            message: `Rate limit exceeded: Max ${rate_limit_limit} messages per ${rate_limit_decay}s.`
+        });
+
+        return {
+            success: false,
+            error: `Rate limit exceeded. Max ${rate_limit_limit} messages per ${rate_limit_decay} seconds.`
+        };
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+        await logService.createLog({
+            userId,
+            level: 'DEBUG',
+            message: `[DEV] Kirim file upload: ${JSON.stringify({
+                rawPhone,
+                normalized: phone,
+                timeout,
+                max_retry,
+                retry_interval,
+                rate_limit_limit,
+                rate_limit_decay,
+                max_queue,
+                filename: file.originalname
+            })}`
+        });
+    }
+
+    if (isQueueFull(userId, max_queue)) {
+        return {
+            success: false,
+            error: `Antrean penuh. Maksimum ${max_queue} pesan dapat diproses sekaligus.`
+        };
+    }
+
+    increaseQueue(userId);
+    try {
+        const result = await retrySend(
+            async () => {
+                    const media = new MessageMedia(file.mimetype, file.buffer.toString('base64'), file.originalname);
+                    await client.sendMessage(`${phone}@c.us`, media, {
+                        caption
+                    });
+                },
+                max_retry,
+                timeout,
+                retry_interval
+        );
 
         await History.create({
             userId,
             phone,
             message: caption || `[file: ${file.originalname}]`,
             type: 'file',
-            status: 'success',
+            status: result.success ? 'success' : 'failed',
             source
         });
-        return {
-            success: true
-        };
 
-    } catch (err) {
-        await History.create({
-            userId,
-            phone,
-            message: caption || '[file]',
-            type: 'file',
-            status: 'failed',
-            source
-        });
-        return {
-            success: false,
-            error: 'Gagal mengirim file',
-            detail: err.message
-        };
+        return result.success ?
+            {
+                success: true
+            } :
+            {
+                success: false,
+                error: 'Gagal mengirim file',
+                detail: result.error
+            };
+
+    } finally {
+        decreaseQueue(userId);
     }
 }
 
 async function sendToGroup(userId, groupName, message, source = 'unknown') {
+    const settingsResult = await getSettingsAndClient(userId);
+    if (settingsResult.error) {
+        return {
+            success: false,
+            error: settingsResult.error
+        };
+    }
+
     const {
         client,
-        error
-    } = await getSettingsAndClient(userId);
-    if (error) return {
-        success: false,
-        error
-    };
+        timeout,
+        max_retry,
+        retry_interval,
+        rate_limit_limit,
+        rate_limit_decay,
+        max_queue
+    } = settingsResult;
 
+    const limited = await isRateLimited(userId, rate_limit_limit, rate_limit_decay);
+    if (limited) {
+        await logService.createLog({
+            userId,
+            level: 'WARNING',
+            message: `Rate limit exceeded: Max ${rate_limit_limit} messages per ${rate_limit_decay}s.`
+        });
+
+        return {
+            success: false,
+            error: `Rate limit exceeded. Max ${rate_limit_limit} messages per ${rate_limit_decay} seconds.`
+        };
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+        await logService.createLog({
+            userId,
+            level: 'DEBUG',
+            message: `[DEV] Kirim grup: ${JSON.stringify({
+                groupName,
+                timeout,
+                max_retry,
+                retry_interval,
+                rate_limit_limit,
+                rate_limit_decay,
+                max_queue
+            })}`
+        });
+    }
+
+    if (isQueueFull(userId, max_queue)) {
+        return {
+            success: false,
+            error: `Antrean penuh. Maksimum ${max_queue} pesan dapat diproses sekaligus.`
+        };
+    }
+
+    increaseQueue(userId);
     try {
-        const chats = await client.getChats();
-        const group = chats.find(chat => chat.isGroup && chat.name === groupName);
+        const result = await retrySend(
+            async () => {
+                    const chats = await client.getChats();
+                    const group = chats.find(chat => chat.isGroup && chat.name === groupName);
+                    if (!group) throw new Error(`Grup "${groupName}" tidak ditemukan`);
+                    await group.sendMessage(message);
+                },
+                max_retry,
+                timeout,
+                retry_interval
+        );
 
-        if (!group) return {
-            success: false,
-            error: `Grup "${groupName}" tidak ditemukan`
-        };
-
-        await group.sendMessage(message);
         await History.create({
             userId,
             phone: groupName,
             message,
             type: 'group',
-            status: 'success',
+            status: result.success ? 'success' : 'failed',
             source
         });
-        return {
-            success: true
-        };
 
-    } catch (err) {
-        await History.create({
-            userId,
-            phone: groupName,
-            message,
-            type: 'group',
-            status: 'failed',
-            source
-        });
-        return {
-            success: false,
-            error: 'Gagal kirim ke grup',
-            detail: err.message
-        };
+        return result.success ?
+            {
+                success: true
+            } :
+            {
+                success: false,
+                error: 'Gagal kirim ke grup',
+                detail: result.error
+            };
+
+    } finally {
+        decreaseQueue(userId);
     }
 }
 
 async function sendBulk(userId, phones, message, delayMs = 1000, source = 'unknown') {
+    const settingsResult = await getSettingsAndClient(userId);
+    if (settingsResult.error) {
+        return {
+            success: false,
+            error: settingsResult.error
+        };
+    }
+
     const {
         client,
         country_code,
-        error
-    } = await getSettingsAndClient(userId);
-    if (error) return {
-        success: false,
-        error
-    };
+        timeout,
+        max_retry,
+        retry_interval,
+        rate_limit_limit,
+        rate_limit_decay,
+        max_queue
+    } = settingsResult;
 
+    const limited = await isRateLimited(userId, rate_limit_limit, rate_limit_decay);
+    if (limited) {
+        await logService.createLog({
+            userId,
+            level: 'WARNING',
+            message: `Rate limit exceeded: Max ${rate_limit_limit} messages per ${rate_limit_decay}s.`
+        });
+
+        return {
+            success: false,
+            error: `Rate limit exceeded. Max ${rate_limit_limit} messages per ${rate_limit_decay} seconds.`
+        };
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+        await logService.createLog({
+            userId,
+            level: 'DEBUG',
+            message: `[DEV] Kirim bulk: ${JSON.stringify({
+                total: phones.length,
+                timeout,
+                max_retry,
+                retry_interval,
+                rate_limit_limit,
+                rate_limit_decay,
+                max_queue
+            })}`
+        });
+    }
+
+    if (isQueueFull(userId, max_queue)) {
+        return {
+            success: false,
+            error: `Antrean penuh. Maksimum ${max_queue} pesan dapat diproses sekaligus.`
+        };
+    }
+
+    increaseQueue(userId);
     const results = [];
     const normalizedList = [];
     let hasFailure = false;
 
-    for (const rawPhone of phones) {
-        const phone = normalizePhoneNumber(rawPhone, country_code);
-        if (!phone) {
-            results.push({
-                phone: rawPhone,
-                success: false,
-                error: 'Nomor tidak valid'
-            });
-            hasFailure = true;
-            continue;
-        }
+    try {
+        for (const rawPhone of phones) {
+            const phone = normalizePhoneNumber(rawPhone, country_code);
+            if (!phone) {
+                results.push({
+                    phone: rawPhone,
+                    success: false,
+                    error: 'Nomor tidak valid'
+                });
+                hasFailure = true;
+                continue;
+            }
 
-        normalizedList.push(phone);
-        try {
-            await client.sendMessage(`${phone}@c.us`, message);
+            normalizedList.push(phone);
+            const result = await retrySend(
+                () => client.sendMessage(`${phone}@c.us`, message),
+                max_retry,
+                timeout,
+                retry_interval
+            );
+
             results.push({
                 phone,
-                success: true
+                success: result.success,
+                error: result.error
             });
-        } catch (err) {
-            results.push({
-                phone,
-                success: false,
-                error: err.message
-            });
-            hasFailure = true;
+            if (!result.success) hasFailure = true;
+
+            await wait(delayMs);
         }
 
-        await delay(delayMs);
+        await History.create({
+            userId,
+            phone: normalizedList.join(', '),
+            message,
+            type: 'bulk',
+            status: hasFailure ? 'failed' : 'success',
+            source
+        });
+
+        return {
+            results
+        };
+
+    } finally {
+        decreaseQueue(userId);
     }
-
-    await History.create({
-        userId,
-        phone: normalizedList.join(', '),
-        message,
-        type: 'bulk',
-        status: hasFailure ? 'failed' : 'success',
-        source
-    });
-
-    return {
-        results
-    };
 }
 
 module.exports = {

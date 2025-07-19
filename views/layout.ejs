@@ -53,6 +53,28 @@
   <script src="/assets/vendor/tinymce/tinymce.min.js"></script>
   <script src="/assets/vendor/php-email-form/validate.js"></script>
   <script src="/assets/js/main.js"></script>
+  <script>
+    (function () {
+      let idleTime = 0;
+      const maxIdleMinutes = 15; // Waktu idle dalam menit
 
+      function resetIdle() {
+        idleTime = 0;
+      }
+
+      // Aktivitas yang dianggap aktif
+      ['mousemove', 'keydown', 'click', 'scroll'].forEach(evt =>
+        document.addEventListener(evt, resetIdle)
+      );
+
+      // Setiap 1 menit, cek apakah idle
+      setInterval(() => {
+        idleTime++;
+        if (idleTime >= maxIdleMinutes) {
+          window.location.href = '/logout'; // Arahkan ke logout
+        }
+      }, 60 * 1000); // 60 detik
+    })();
+  </script>
 </body>
 </html>

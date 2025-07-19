@@ -56,32 +56,61 @@
                     <p class="text-center small">Enter your personal details to create account</p>
                   </div>
 
-                  <form class="row g-3 needs-validation" action="/register" method="POST">
+                  <form class="row g-2 needs-validation" action="/register" method="POST">
                     <div class="col-12">
                       <label for="fullName" class="form-label">Full Name</label>
-                      <input type="text" name="name" class="form-control" id="fullName" required>
+                      <input type="text" name="name" class="form-control" id="fullName" value="<%= old?.name || '' %>" required>
                       <div class="invalid-feedback">Please, enter your name!</div>
                     </div>
 
                     <div class="col-12">
                       <label for="email" class="form-label">Email</label>
-                      <input type="email" name="email" class="form-control" id="email" required>
-                      <div class="invalid-feedback">Please enter a valid Email adddress!</div>
+                      <input type="email" name="email" class="form-control <%= errors?.email ? 'is-invalid' : '' %>" id="email" required value="<%= old?.email || '' %>">
+                      <% if (errors?.email) { %>
+                        <div class="invalid-feedback"><%= errors.email %></div>
+                      <% } else { %>
+                        <div class="invalid-feedback">Please enter a valid Email address!</div>
+                      <% } %>
                     </div>
 
                     <div class="col-12">
                       <label for="username" class="form-label">Username</label>
                       <div class="input-group has-validation">
                         <span class="input-group-text" id="inputGroupPrepend">@</span>
-                        <input type="text" name="username" class="form-control" id="username" required>
-                        <div class="invalid-feedback">Please choose a username.</div>
+                        <input type="text" name="username" class="form-control <%= errors?.username ? 'is-invalid' : '' %>" id="username" required value="<%= old?.username || '' %>">
+                        <% if (errors?.username) { %>
+                          <div class="invalid-feedback"><%= errors.username %></div>
+                        <% } else { %>
+                          <div class="invalid-feedback">Please choose a username.</div>
+                        <% } %>
                       </div>
                     </div>
 
                     <div class="col-12">
                       <label for="password" class="form-label">Password</label>
-                      <input type="password" name="password" class="form-control" id="password" required>
-                      <div class="invalid-feedback">Please enter your password!</div>
+                      <div class="input-group">
+                        <input type="password" name="password" class="form-control  <%= errors?.password ? 'is-invalid' : '' %>" id="password" required>
+                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="#password">
+                            <i class="bi bi-eye-slash"></i>
+                        </button>
+                      </div>
+                      <% if (errors?.password) { %>
+                        <div class="invalid-feedback"><%= errors.password %></div>
+                      <% } else { %>
+                        <div class="invalid-feedback">Please enter your password!</div>
+                      <% } %>
+                    </div>
+                    <!-- Petunjuk aturan password -->
+                    <div class="mb-0 mt-3 ps-3">
+                      <span class="form-text text-muted ">
+                        <ul class="mb-0 small password-rules list-unstyled" id="password-rules">
+                          <li data-rule="length"><i class="bi bi-circle me-1"></i> Minimal 8 karakter</li>
+                          <li data-rule="uppercase"><i class="bi bi-circle me-1"></i> Mengandung huruf besar (A-Z)</li>
+                          <li data-rule="lowercase"><i class="bi bi-circle me-1"></i> Mengandung huruf kecil (a-z)</li>
+                          <li data-rule="number"><i class="bi bi-circle me-1"></i> Mengandung angka (0-9)</li>
+                          <li data-rule="symbol"><i class="bi bi-circle me-1"></i> Mengandung simbol (!@#$%^&*)</li>
+                        </ul>
+                      </span>
                     </div>
 
                     <div class="col-12">
@@ -98,7 +127,6 @@
                       <p class="small mb-0">Already have an account? <a href="/login">Log in</a></p>
                     </div>
                   </form>
-
                 </div>
               </div>
 
@@ -110,6 +138,45 @@
 
     </div>
   </main><!-- End #main -->
+
+  <script>
+    document.querySelectorAll('.toggle-password').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const input = document.querySelector(this.dataset.target);
+        const icon = this.querySelector('i');
+        input.type = input.type === 'password' ? 'text' : 'password';
+        icon.classList.toggle('bi-eye');
+        icon.classList.toggle('bi-eye-slash');
+      });
+    });
+
+    const passwordInput = document.getElementById('password');
+    const rules = {
+      length: pw => pw.length >= 8,
+      uppercase: pw => /[A-Z]/.test(pw),
+      lowercase: pw => /[a-z]/.test(pw),
+      number: pw => /\d/.test(pw),
+      symbol: pw => /[!@#$%^&*(),.?":{}|<>]/.test(pw)
+    };
+
+    const ruleItems = document.querySelectorAll('#password-rules li');
+
+    passwordInput.addEventListener('input', () => {
+      const val = passwordInput.value;
+
+      ruleItems.forEach(item => {
+        const rule = item.getAttribute('data-rule');
+        const icon = item.querySelector('i');
+        if (rules[rule](val)) {
+          icon.classList.remove('bi-circle', 'text-muted');
+          icon.classList.add('bi-check-circle-fill', 'text-success');
+        } else {
+          icon.classList.remove('bi-check-circle-fill', 'text-success');
+          icon.classList.add('bi-circle', 'text-muted');
+        }
+      });
+    });
+  </script>
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 

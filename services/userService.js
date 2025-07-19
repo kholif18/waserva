@@ -1,7 +1,6 @@
 const {
     User
 } = require('../models');
-const bcrypt = require('bcryptjs');
 const {
     Op
 } = require('sequelize');
@@ -57,4 +56,19 @@ exports.updateUserProfile = async (id, data) => {
     if (!updated) throw new Error('Gagal update, user tidak ditemukan.');
 
     return true;
+};
+
+exports.findUserByUsernameOrEmail = async (username, email, excludeId) => {
+    return await User.findOne({
+        where: {
+            [Op.or]: [{
+                username
+            }, {
+                email
+            }],
+            id: {
+                [Op.ne]: excludeId
+            }
+        }
+    });
 };

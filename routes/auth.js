@@ -3,10 +3,10 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 
 // halaman login & register
-router.get('/login', authController.showLogin); // ✅ cocok dengan isi controller
+router.get('/login', authController.showLogin);
 router.post('/login', authController.login);
 
-router.get('/register', authController.showRegister); // ✅ cocok juga
+router.get('/register', authController.showRegister); 
 router.post('/register', authController.register);
 
 // logout

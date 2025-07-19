@@ -5,7 +5,6 @@ const {
 exports.viewLogPage = (req, res) => {
     res.render('pages/logs', {
         title: 'Log System',
-        user: req.session.user,
         activePage: 'logs'
     });
 };

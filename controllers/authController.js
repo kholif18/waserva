@@ -6,18 +6,26 @@ const {
 const logService = require('../services/logService');
 const whatsappSessionController = require('./whatsappSessionController');
 
+// Fungsi validasi password kuat
+function isStrongPassword(password) {
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    return strongPasswordRegex.test(password);
+}
+
 module.exports = {
     showLogin: (req, res) => {
         res.render('auth/login', {
             layout: false,
-            errors: {}, 
+            errors: {},
             old: {}
         });
     },
 
     showRegister: (req, res) => {
         res.render('auth/register', {
-            layout: false
+            layout: false,
+            errors: {},
+            old: {}
         });
     },
 
@@ -28,33 +36,57 @@ module.exports = {
             email,
             password
         } = req.body;
-        try {
-            console.log('Register attempt:', {
-                name,
-                username,
-                email,
-                password
-            });
+        const errors = {};
 
-            const existingUser = await User.findOne({
+        try {
+            // Cek username unik
+            const existingUserByUsername = await User.findOne({
                 where: {
                     username
                 }
             });
-            if (existingUser) {
-                console.log('Username already exists:', username);
-                return res.status(400).send('Username sudah digunakan');
+            if (existingUserByUsername) {
+                errors.username = 'Username sudah digunakan';
             }
 
+            // Cek email unik
+            const existingUserByEmail = await User.findOne({
+                where: {
+                    email
+                }
+            });
+            if (existingUserByEmail) {
+                errors.email = 'Email sudah digunakan';
+            }
+
+            // Validasi password
+            if (!isStrongPassword(password)) {
+                errors.password = 'Password harus minimal 8 karakter dan mengandung huruf besar, huruf kecil, angka, serta simbol.';
+            }
+
+            // Jika ada error, render ulang form dengan pesan error dan isi lama
+            if (Object.keys(errors).length > 0) {
+                return res.status(400).render('auth/register', {
+                    layout: false,
+                    errors,
+                    old: {
+                        name,
+                        username,
+                        email
+                    }
+                });
+            }
+
+            // Hash password dan buat user baru
             const hashedPassword = await bcrypt.hash(password, 10);
             const user = await User.create({
-                name: name,
+                name,
                 username,
                 email,
                 password: hashedPassword
             });
 
-            // Tambahkan setting default setelah user berhasil dibuat
+            // Buat default setting user
             const defaultSettings = [{
                     key: 'timeout',
                     value: '30'
@@ -93,17 +125,24 @@ module.exports = {
                 }))
             );
 
-            console.log('User created:', user.id);
-
+            // Simpan user ke session
             req.session.user = {
                 id: user.id,
-                username: user.username
+                name: user.name,
+                username: user.username,
+                profile_image: user.profile_image
             };
+
+            // Log registrasi
             await logService.createLog({
                 userId: user.id,
                 level: 'INFO',
                 message: `New user registered: ${user.username}`
             });
+
+            // Mulai sesi WhatsApp
+            await whatsappSessionController.startUserSession(user.id);
+
             res.redirect('/');
         } catch (err) {
             console.error('Register error:', err);
@@ -111,11 +150,11 @@ module.exports = {
         }
     },
 
-
     login: async (req, res) => {
         const {
             username,
-            password
+            password,
+            remember
         } = req.body;
 
         try {
@@ -150,7 +189,7 @@ module.exports = {
                 });
             }
 
-            // Simpan user ke sesi
+            // Simpan user ke sesi (lengkap)
             req.session.user = {
                 id: user.id,
                 name: user.name,
@@ -158,22 +197,22 @@ module.exports = {
                 profile_image: user.profile_image
             };
 
-            // Logging
+            if (req.body.remember === 'true' || req.body.remember === 'on') {
+                // Simpan sesi selama 30 hari
+                req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 hari
+            } else {
+                // Sesi hanya aktif selama browser terbuka
+                req.session.cookie.expires = false;
+            }
+
             await logService.createLog({
                 userId: user.id,
                 level: 'INFO',
                 message: `User ${user.username} logged in successfully.`
             });
 
-            // 🟢 Panggil startSession() setelah login berhasil
-            whatsappSessionController.startSession({
-                    session: {
-                        user: req.session.user
-                    }
-                }, {
-                    json: () => {}
-                } // Fake response object
-            );
+            // Start WA session
+            await whatsappSessionController.startUserSession(user.id);
 
             res.redirect('/');
         } catch (err) {
@@ -198,7 +237,12 @@ module.exports = {
             });
         }
 
-        req.session.destroy(() => {
+        req.session.destroy(err => {
+            if (err) {
+                console.error('Gagal destroy session:', err);
+                return res.redirect('/');
+            }
+            res.clearCookie('connect.sid'); 
             res.redirect('/login');
         });
     }

@@ -80,12 +80,12 @@
 
                     <div class="col-12">
                       <label for="password" class="form-label">Password</label>
-                      <input
-                        type="password"
-                        name="password"
-                        class="form-control <%= errors.password ? 'is-invalid' : '' %>"
-                        id="password"
-                        required>
+                      <div class="input-group">
+                        <input type="password" name="password" class="form-control <%= errors.password ? 'is-invalid' : '' %>" id="password" required>
+                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="#password">
+                            <i class="bi bi-eye-slash"></i>
+                        </button>
+                      </div>
                       <% if (errors.password) { %>
                         <div class="invalid-feedback"><%= errors.password %></div>
                       <% } else { %>
@@ -117,6 +117,18 @@
 
     </div>
   </main><!-- End #main -->
+
+  <script>
+    document.querySelectorAll('.toggle-password').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const input = document.querySelector(this.dataset.target);
+        const icon = this.querySelector('i');
+        input.type = input.type === 'password' ? 'text' : 'password';
+        icon.classList.toggle('bi-eye');
+        icon.classList.toggle('bi-eye-slash');
+      });
+    });
+  </script>
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 

@@ -71,32 +71,33 @@
     <div class="last-message-card">
         <div class="last-message-header">
             <div class="last-message-title">Last Message</div>
-            <div class="last-message-time"><%= lastMessage.timeFormatted %></div>
-        </div>
-
-        <% if (lastMessage.message) { %>
-        <div class="message-container">
-            <div class="message-avatar"><%= (lastMessage.sender || 'W')[0] %></div>
-            <div class="message-content">
-                <div class="message-header">
-                    <div class="message-sender"><%= lastMessage.sender %></div>
-                    <div class="message-time"><%= lastMessage.timeOnly %></div>
-                </div>
-                <div class="message-text">
-                    <%= lastMessage.message %>
-                </div>
-
-                <div class="message-status <%= lastMessage.statusClass %>">
-                    <i class="<%= lastMessage.iconClass %>"></i> <%= lastMessage.status %>
-                </div>
-
-
+            <div class="last-message-time">
+                <%= lastMessage ? lastMessage.timeFormatted : '-' %>
             </div>
         </div>
+
+        <% if (lastMessage && lastMessage.message) { %>
+            <div class="message-container">
+                <div class="message-avatar"><%= (lastMessage.sender || 'W')[0] %></div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <div class="message-sender"><%= lastMessage.sender %></div>
+                        <div class="message-time"><%= lastMessage.timeOnly %></div>
+                    </div>
+                    <div class="message-text">
+                        <%= lastMessage.message %>
+                    </div>
+
+                    <div class="message-status <%= lastMessage.statusClass %>">
+                        <i class="<%= lastMessage.iconClass %>"></i> <%= lastMessage.status %>
+                    </div>
+                </div>
+            </div>
         <% } else { %>
-        <div class="text-center">No messages have been sent yet.</div>
+            <div class="text-center">No messages have been sent yet.</div>
         <% } %>
     </div>
+
 
     <script>
         const sessionId = "<%= user.id %>";

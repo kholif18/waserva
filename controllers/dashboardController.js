@@ -98,7 +98,15 @@ exports.viewDashboard = async (req, res) => {
             ]
         });
 
-        let lastMessage = null;
+        let lastMessage = {
+            sender: null,
+            message: null,
+            status: null,
+            iconClass: null,
+            statusClass: null,
+            timeFormatted: '-',
+            timeOnly: '-'
+        };
 
         if (lastMsg) {
             const status = lastMsg.status;
@@ -133,7 +141,6 @@ exports.viewDashboard = async (req, res) => {
             title: 'Dashboard',
             description: 'Halaman utama Waserva',
             activePage: 'dashboard',
-            user: req.session.user,
             gatewayStatus,
             messageCountToday: totalToday,
             successRate,
