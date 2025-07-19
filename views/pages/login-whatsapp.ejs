@@ -30,6 +30,9 @@
                             <li>Arahkan kamera ponsel Anda ke QR Code di atas</li>
                             <li>Tunggu hingga proses koneksi selesai</li>
                         </ol>
+                        <div class="d-flex justify-content-center align-items-center">
+                            <button class="btn btn-danger mt-2" onclick="resetSession()"><i class="bx bx-undo"></i> Reset Session</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -166,6 +169,41 @@
                 alert('Gagal logout: ' + data.error);
             }
         });
+
+        function resetSession() {
+            Swal.fire({
+                title: 'Reset Session?',
+                text: 'Ini akan menghapus sesi WhatsApp dan meminta scan ulang QR.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, reset',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#d33',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('/wa/reset-session', { method: 'POST' })
+                        .then(res => res.json())
+                        .then(data => {
+                            Swal.fire({
+                                title: data.success ? 'Berhasil' : 'Gagal',
+                                text: data.message,
+                                icon: data.success ? 'success' : 'error',
+                                confirmButtonText: 'OK',
+                            }).then(() => {
+                                if (data.success) location.reload();
+                            });
+                        })
+                        .catch(() => {
+                            Swal.fire({
+                                title: 'Gagal',
+                                text: 'Terjadi kesalahan saat mereset session.',
+                                icon: 'error'
+                            });
+                        });
+                }
+            });
+        }
+
     </script>
 
 

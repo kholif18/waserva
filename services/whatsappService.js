@@ -74,17 +74,37 @@ async function startSession(userId) {
     const sessionPath = path.join(__dirname, '../sessions', `session-${userId}`);
     const singletonLock = path.join(sessionPath, 'SingletonLock');
 
-    if (fs.existsSync(singletonLock) && !clients.has(userId)) {
-        try {
-            fs.rmSync(sessionPath, {
-                recursive: true,
-                force: true
-            });
-            await log(userId, 'INFO', 'Session folder dihapus karena ada SingletonLock dan belum aktif');
-        } catch (err) {
-            await log(userId, 'ERROR', `Gagal menghapus session folder: ${err.message}`);
+    try {
+        if (fs.existsSync(sessionPath)) {
+            if (fs.existsSync(singletonLock)) {
+                await log(userId, 'WARN', 'SingletonLock terdeteksi. Akan hapus seluruh session folder.');
+                fs.rmSync(sessionPath, {
+                    recursive: true,
+                    force: true
+                });
+                await log(userId, 'INFO', 'Session folder berhasil dihapus karena lock file.');
+            } else {
+                const files = fs.readdirSync(sessionPath);
+                if (files.length === 0) {
+                    fs.rmSync(sessionPath, {
+                        recursive: true,
+                        force: true
+                    });
+                    await log(userId, 'INFO', 'Session folder kosong dihapus.');
+                }
+            }
+        }
+
+        // ⏳ Tunggu sampai file lock hilang
+        const success = await waitForFileRelease(singletonLock, 5000);
+        if (!success) {
+            await log(userId, 'ERROR', 'Gagal memulai sesi: SingletonLock tidak hilang setelah 5 detik.');
             return;
         }
+
+    } catch (err) {
+        await log(userId, 'ERROR', `Gagal mengecek/menghapus session folder: ${err.message}`);
+        return;
     }
 
     const client = new Client({

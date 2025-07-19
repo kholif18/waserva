@@ -7,7 +7,8 @@ const {
     logoutSession,
     listSessions,
     getSessionStatus,
-    renderLoginWhatsApp
+    renderLoginWhatsApp,
+    resetSession
 } = require('../controllers/whatsappSessionController');
 
 // Controller: Message (send text/media/etc)
@@ -27,6 +28,8 @@ router.post('/start', startSession);
 router.get('/logout', logoutSession);
 router.get('/sessions', listSessions);
 router.get('/status', getSessionStatus);
+router.post('/reset-session', resetSession);
+
 
 // --- MESSAGE ROUTES ---
 router.get('/message', viewMessagePage);

@@ -1,5 +1,12 @@
 const logService = require('../services/logService');
 const whatsappService = require('../services/whatsappService');
+const path = require('path');
+const fs = require('fs');
+const {
+    getSessionKey,
+    getClient, 
+    removeClient
+} = require('../services/sessionManager');
 
 let io = null;
 
@@ -136,6 +143,44 @@ async function listSessions(req, res) {
     }
 }
 
+async function resetSession(req, res) {
+    const userId = req.session.user.id;
+    const sessionKey = getSessionKey(userId);
+    const sessionPath = path.join(__dirname, '../sessions', `session-${sessionKey}`);
+
+    try {
+        // ✅ Destroy client jika masih ada
+        const client = getClient(sessionKey);
+        if (client) {
+            await client.destroy(); // ini penting agar lock dilepas
+            removeClient(sessionKey);
+        }
+
+        // 🧹 Hapus folder session
+        if (fs.existsSync(sessionPath)) {
+            fs.rmSync(sessionPath, {
+                recursive: true,
+                force: true
+            });
+            return res.json({
+                success: true,
+                message: 'Session folder deleted.'
+            });
+        } else {
+            return res.json({
+                success: false,
+                message: 'Session folder not found.'
+            });
+        }
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to delete session.',
+            error: err.message
+        });
+    }
+}
+
 module.exports = {
     setSocketInstance,
     startSession,
@@ -143,5 +188,6 @@ module.exports = {
     logoutSession,
     listSessions,
     renderLoginWhatsApp,
-    startUserSession
+    startUserSession,
+    resetSession
 };

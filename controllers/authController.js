@@ -141,7 +141,7 @@ module.exports = {
             });
 
             // Mulai sesi WhatsApp
-            await whatsappSessionController.startUserSession(user.id);
+            //await whatsappSessionController.startUserSession(user.id);
 
             res.redirect('/');
         } catch (err) {
