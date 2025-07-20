@@ -85,8 +85,6 @@
             </div>
         </div>
     </div>
-    <% console.log("SUCCESS:", success) %>
-    <% console.log("ERROR:", error) %>
     <% if (Array.isArray(success) && success.length > 0) { %>
         <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
             <div class="toast align-items-center text-bg-success border-0" role="alert">
@@ -103,7 +101,6 @@
         </div>
     <% } %>
     
-    <% console.log("ERROR DATA:", error) %>
     <% if (Array.isArray(error) && error.length > 0) { %>
         <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
             <div class="toast align-items-center text-bg-danger border-0" role="alert">

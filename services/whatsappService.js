@@ -270,6 +270,14 @@ async function logoutSession(userId) {
     }
 }
 
+function isClientReady(userId) {
+    const sessionKey = getSessionKey(userId);
+    const session = sessions[sessionKey];
+    const client = clients.get(sessionKey);
+
+    return !!(session && client && client.info);
+}
+
 function getStatus(userId) {
     return sessions[getSessionKey(userId)]?.status || 'not_initialized';
 }
@@ -298,29 +306,25 @@ async function initActiveSessions() {
     }
 }
 
-// ========== Messaging ==========
-
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function isRateLimited(userId, limit, decaySeconds) {
-    if (!limit || !decaySeconds) return false;
-
-    const since = new Date(Date.now() - Number(decaySeconds) * 1000);
-    if (isNaN(since.getTime())) return false;
-
-    const count = await History.count({
-        where: {
-            userId,
-            createdAt: {
-                [Op.gte]: since
-            }
-        }
+async function getAllSessionStatus() {
+    const users = await User.findAll({
+        attributes: ['id', 'name', 'username', 'email', 'role']
     });
 
-    return count >= limit;
+    return users.map(user => {
+        const status = getStatus(user.id);
+        return {
+            id: user.id,
+            name: user.name,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            status
+        };
+    });
 }
+
+// ========== Messaging ==========
 
 async function getSettingsAndClient(userId) {
     try {
@@ -862,8 +866,10 @@ module.exports = {
     logoutSession,
     getStatus,
     getClient,
+    isClientReady,
     enableInitActiveSessions,
     initActiveSessions,
+    getAllSessionStatus,
     sendText,
     sendMediaFromUrl,
     sendMediaFromUpload,

@@ -10,6 +10,7 @@ router.post('/login', loginLimiter, authController.login);
 // Form lupa password
 router.get('/forgot-password', authController.showForgotPassword);
 router.post('/forgot-password', authController.processForgotPassword);
+router.post('/forgot-password/check-email', authController.checkEmail);
 
 // Form reset password (setelah verifikasi)
 router.get('/reset-password/:token', authController.showResetPasswordForm);

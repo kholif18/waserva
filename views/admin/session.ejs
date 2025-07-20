@@ -1,0 +1,38 @@
+<section>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Monitoring Sesi WhatsApp</h5>
+        
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                    <th>Nama</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% sessionList.forEach(session => { %>
+                    <tr>
+                        <td><%= session.name %></td>
+                        <td><%= session.username %></td>
+                        <td><%= session.email %></td>
+                        <td><%= session.role %></td>
+                        <td>
+                        <span class="badge 
+                            <%= session.status === 'connected' ? 'bg-success' : 
+                                session.status === 'qr' ? 'bg-warning' :
+                                session.status === 'auth_failure' || session.status === 'disconnected' ? 'bg-danger' :
+                                'bg-secondary' %>">
+                            <%= session.status %>
+                        </span>
+                        </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

@@ -30,7 +30,17 @@
 <body>
 
   <%- include('partials/header') %>
-  <%- include('partials/sidebar', { activePage: typeof activePage !== 'undefined' ? activePage : locals.activePage }) %>
+    <% if (user?.role === 'admin') { %>
+    <%- include('partials/sidebar-admin', {
+      activePage: typeof activePage !== 'undefined' ? activePage : locals.activePage,
+      user: typeof user !== 'undefined' ? user : locals.user
+    }) %>
+  <% } else { %>
+    <%- include('partials/sidebar', {
+      activePage: typeof activePage !== 'undefined' ? activePage : locals.activePage,
+      user: typeof user !== 'undefined' ? user : locals.user
+    }) %>
+  <% } %>
 
   <main id="main" class="main">
     <%- body %>

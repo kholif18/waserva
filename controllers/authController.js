@@ -4,22 +4,32 @@ const {
     Setting,
     PasswordResetToken
 } = require('../models');
+const nodemailer = require('nodemailer');
+const {
+    Op
+} = require('sequelize');
 const crypto = require('crypto');
 const logService = require('../services/logService');
 const whatsappSessionController = require('./whatsappSessionController');
+const whatsappService = require('../services/whatsappService');
 
 // Fungsi validasi password kuat
 function isStrongPassword(password) {
-    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/;
     return strongPasswordRegex.test(password);
 }
 
 module.exports = {
     showLogin: (req, res) => {
+        const success = req.flash('success');
+        const error = req.flash('error');
+
         res.render('auth/login', {
             layout: false,
             errors: {},
-            old: {}
+            old: {},
+            success,
+            error
         });
     },
 
@@ -85,7 +95,8 @@ module.exports = {
                 name,
                 username,
                 email,
-                password: hashedPassword
+                password: hashedPassword,
+                role: 'user'
             });
 
             // Buat default setting user
@@ -210,14 +221,14 @@ module.exports = {
                 id: user.id,
                 name: user.name,
                 username: user.username,
-                profile_image: user.profile_image
+                profile_image: user.profile_image,
+                role: user.role // pastikan ada ini
             };
 
-            if (req.body.remember === 'true' || req.body.remember === 'on') {
-                // Simpan sesi selama 30 hari
+            // Durasi sesi
+            if (remember === 'true' || remember === 'on') {
                 req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 hari
             } else {
-                // Sesi hanya aktif selama browser terbuka
                 req.session.cookie.expires = false;
             }
 
@@ -228,12 +239,17 @@ module.exports = {
             });
 
             // Start WA session
-            whatsappSessionController.startUserSession(user.id)
-            .catch(err => {
-                console.error('WA session error:', err);
-            });
+            if (user.role !== 'admin') {
+                whatsappSessionController.startUserSession(user.id).catch(console.error);
+            }
 
-            res.redirect('/');
+            // Redirect berdasarkan role
+            if (user.role === 'admin') {
+                return res.redirect('/admin/dashboard');
+            } else {
+                return res.redirect('/');
+            }
+
         } catch (err) {
             await logService.createLog({
                 userId: 0,
@@ -241,34 +257,40 @@ module.exports = {
                 message: `Login failed for username ${username}`
             });
 
-            res.status(500).render('auth/login', {
+            return res.status(500).render('auth/login', {
                 layout: false,
                 errors: {
                     general: 'Terjadi kesalahan saat login'
                 },
                 old: {
-                    username,
-                }
+                    username
+                },
+                success: req.flash('success'),
+                error: req.flash('error')
             });
-
         }
     },
+
 
     showForgotPassword: (req, res) => {
         res.render('auth/forgot-password', {
             layout: false,
             errors: {},
-            old: {}
+            old: {},
+            flashMessage: null, // <== tambah ini
+            showAlert: false
         });
     },
 
     processForgotPassword: async (req, res) => {
         const {
-            username
+            email,
+            method
         } = req.body;
+
         const user = await User.findOne({
             where: {
-                username
+                email
             }
         });
 
@@ -276,19 +298,31 @@ module.exports = {
             return res.status(400).render('auth/forgot-password', {
                 layout: false,
                 errors: {
-                    username: 'Username tidak ditemukan'
+                    email: 'Email tidak ditemukan'
                 },
                 old: {
-                    username
-                }
+                    email
+                },
+                flashMessage: null,
+                showAlert: false,
+                redirectToLogin: false
             });
         }
 
-        // Buat token acak
+        // Hapus token lama
+        await PasswordResetToken.destroy({
+            where: {
+                userId: user.id,
+                used: false,
+                expiresAt: {
+                    [Op.gt]: new Date()
+                }
+            }
+        });
+
         const token = crypto.randomBytes(32).toString('hex');
         const expiresAt = new Date(Date.now() + 1000 * 60 * 30); // 30 menit
 
-        // Simpan token
         await PasswordResetToken.create({
             userId: user.id,
             token,
@@ -297,12 +331,85 @@ module.exports = {
         });
 
         const resetLink = `${req.protocol}://${req.get('host')}/reset-password/${token}`;
+        const isReady = whatsappService.isClientReady(user.id);
 
-        // 🚧 Kirim link ke email atau tampilkan langsung (sementara)
-        console.log(`🔗 Reset link: ${resetLink}`);
+        let flashMessage = '';
+        let showAlert = true;
 
-        req.flash('success', 'Link reset password berhasil dibuat (lihat console).');
-        res.redirect('/login');
+        if (method === 'whatsapp' && user.phone) {
+            if (isReady) {
+                await whatsappService.sendText(user.id, user.phone, `Permintaan reset password:\n${resetLink}`);
+                flashMessage = 'Link reset password telah dikirim ke WhatsApp Anda.';
+            } else {
+                flashMessage = 'Sesi WhatsApp Anda belum aktif. Silakan kirim link melalui email.';
+            }
+        } else if (method === 'email' && user.email) {
+            const transporter = nodemailer.createTransport({
+                host: process.env.SMTP_HOST,
+                port: process.env.SMTP_PORT || 587,
+                secure: false,
+                auth: {
+                    user: process.env.SMTP_USER,
+                    pass: process.env.SMTP_PASS
+                }
+            });
+
+            await transporter.sendMail({
+                from: `"${process.env.SMTP_NAME || 'Waserva Support'}" <${process.env.SMTP_USER}>`,
+                to: user.email,
+                subject: 'Reset Password',
+                html: `
+                <p>Halo ${user.name || user.username},</p>
+                <p>Kami menerima permintaan untuk mereset password akun Anda di <strong>Waserva</strong>.</p>
+                <p>Klik link berikut untuk mengatur ulang password Anda:</p>
+                <p><a href="${resetLink}">${resetLink}</a></p>
+                <p><strong>Catatan penting demi keamanan:</strong></p>
+                <ul>
+                    <li>Link ini hanya berlaku selama 30 menit.</li>
+                    <li>Jangan bagikan link ini kepada siapa pun.</li>
+                    <li>Jika Anda tidak merasa melakukan permintaan ini, abaikan saja email ini. Akun Anda tetap aman.</li>
+                </ul>
+                <p>Terima kasih,<br>Tim Waserva</p>
+            `
+            });
+
+            flashMessage = 'Link reset password telah dikirim ke email Anda.';
+        } else {
+            flashMessage = 'Metode pengiriman tidak valid atau data tidak tersedia.';
+        }
+
+        return res.render('auth/forgot-password', {
+            layout: false,
+            errors: {},
+            old: {
+                email
+            },
+            flashMessage,
+            showAlert,
+            redirectToLogin: true
+        });
+    },
+
+    checkEmail: async (req, res) => {
+        const {
+            email
+        } = req.body;
+        const user = await User.findOne({
+            where: {
+                email
+            }
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Email tidak ditemukan'
+            });
+        }
+
+        return res.json({
+            success: true
+        });
     },
 
     showResetPasswordForm: async (req, res) => {
@@ -352,12 +459,12 @@ module.exports = {
             return res.redirect('/login');
         }
 
-        if (!password || password.length < 8) {
-            errors.password = 'Password minimal 8 karakter.';
+        if (!password) {
+            errors.password = 'Password tidak boleh kosong.';
+        } else if (!isStrongPassword(password)) {
+            errors.password = 'Password harus minimal 8 karakter dan mengandung huruf besar, huruf kecil, angka, dan simbol (!@#$%^&*).';
         } else if (password !== confirmPassword) {
             errors.confirmPassword = 'Konfirmasi tidak cocok.';
-        } else if (!isStrongPassword(password)) {
-            errors.password = 'Password harus mengandung huruf besar, kecil, angka, dan simbol.';
         }
 
         if (Object.keys(errors).length > 0) {

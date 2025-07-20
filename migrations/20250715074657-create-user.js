@@ -13,7 +13,8 @@ module.exports = {
         type: Sequelize.STRING
       },
       username: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        unique: true
       },
       email: {
         type: Sequelize.STRING
@@ -29,6 +30,11 @@ module.exports = {
       },
       profile_image: {
         type: Sequelize.STRING
+      },
+      role: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        defaultValue: 'user'
       },
       createdAt: {
         allowNull: false,

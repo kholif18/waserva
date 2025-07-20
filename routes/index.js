@@ -16,6 +16,7 @@ const settingRoutes = require('./setting');
 const reportRoutes = require('./report');
 const logRoutes = require('./log');
 const helpController = require('../controllers/helpController');
+const adminRoutes = require('./admin');
 
 // Authentication
 router.use('/', authRoutes);
@@ -32,6 +33,9 @@ router.use('/wa', isAuthenticated, webWhatsappRoutes);
 router.use('/history', isAuthenticated, historyRoutes);
 router.use('/report', isAuthenticated, reportRoutes);
 router.use('/logs', isAuthenticated, logRoutes);
+
+// Admin Route
+router.use('/admin', isAuthenticated, adminRoutes);
 
 // Help Pages
 router.get('/helps', isAuthenticated, helpController.index);

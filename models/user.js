@@ -2,10 +2,10 @@
 const {
   Model
 } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     static associate(models) {
-      // Seorang user bisa punya banyak API Client
       User.hasMany(models.ApiClient, {
         foreignKey: 'userId',
         as: 'apiClients'
@@ -22,10 +22,16 @@ module.exports = (sequelize, DataTypes) => {
     phone: DataTypes.STRING,
     address: DataTypes.STRING,
     password: DataTypes.STRING,
-    profile_image: DataTypes.STRING
+    profile_image: DataTypes.STRING,
+    role: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'user'
+    }
   }, {
     sequelize,
     modelName: 'User',
   });
+
   return User;
 };
