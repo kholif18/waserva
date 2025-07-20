@@ -181,6 +181,30 @@ async function resetSession(req, res) {
     }
 }
 
+async function logout (userId) {
+    const client = getClient(userId);
+    if (!client) throw new Error('Client tidak ditemukan');
+
+    try {
+        await client.logout(); // WA API logout
+        await client.destroy(); // pastikan shutdown
+        removeClient(userId);
+        await logService.createLog({
+            userId,
+            level: 'INFO',
+            message: 'Session di-force logout oleh admin'
+        });
+        return true;
+    } catch (err) {
+        await logService.createLog({
+            userId,
+            level: 'ERROR',
+            message: `Gagal force logout: ${err.message}`
+        });
+        throw new Error('Gagal logout client: ' + err.message);
+    }
+};
+
 module.exports = {
     setSocketInstance,
     startSession,
@@ -189,5 +213,6 @@ module.exports = {
     listSessions,
     renderLoginWhatsApp,
     startUserSession,
-    resetSession
+    resetSession,
+    logout
 };
