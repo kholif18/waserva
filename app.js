@@ -5,10 +5,11 @@ const expressLayouts = require('express-ejs-layouts');
 const session = require('express-session');
 const flash = require('connect-flash');
 const http = require('http');
+const fs = require('fs');
+
 const {
   Server
 } = require('socket.io');
-const fs = require('fs');
 const whatsappService = require('./services/whatsappService');
 const {
   sequelize,
@@ -18,7 +19,6 @@ const {
   setSocketInstance
 } = require('./controllers/whatsappSessionController');
 
-// Inisialisasi Express & Socket.IO
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -26,14 +26,11 @@ const io = new Server(server, {
     origin: '*'
   }
 });
-
-// Inject Socket ke session controller
 setSocketInstance(io);
 
 // Handle koneksi socket WA
 io.on('connection', (socket) => {
   console.log('Socket client connected');
-
   const sessionId = socket.handshake.query.session;
   if (!sessionId) {
     console.warn('Session ID not provided in socket');
@@ -41,7 +38,7 @@ io.on('connection', (socket) => {
   }
 
   socket.join(sessionId);
-  console.log(`📡 Socket joined session: ${sessionId}`);
+  console.log(`Socket joined session: ${sessionId}`);
 
   const currentSession = global.sessions[sessionId];
   if (currentSession) {
@@ -80,7 +77,6 @@ app.use(session({
     httpOnly: true
   }
 }));
-
 app.use(flash());
 
 // Middleware global (user & flash)
@@ -113,26 +109,26 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Routes
 const authRoutes = require('./routes/auth');
 const mainRoutes = require('./routes');
-
 app.use('/', authRoutes);
 app.use('/', mainRoutes);
 
-// Start App
+// Start Server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`waserva is running on http://localhost:${PORT}`);
 });
 
+// BOOT SYSTEM
 (async () => {
   try {
     await sequelize.authenticate();
     console.log('Database connected.');
 
-    // Jalankan session WhatsApp setelah DB siap
-    whatsappService.enableInitActiveSessions();
-    await whatsappService.initActiveSessions();
-    console.log('All WhatsApp sessions initialized.');
+    // Booting: validasi folder dan inisialisasi sesi WA
+    await whatsappService.boot();
+
+    console.log('Semua sesi WhatsApp berhasil dipulihkan.');
   } catch (error) {
-    console.error('Error during server startup:', error);
+    console.error('Gagal saat proses booting aplikasi:', error);
   }
 })();

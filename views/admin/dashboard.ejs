@@ -1,6 +1,6 @@
 <section class="section dashboard">
     <div class="row">
-        <!-- User Card -->
+        
         <div class="col-xxl-3 col-md-3">
             <div class="card info-card sales-card">
 
@@ -18,225 +18,199 @@
             </div>
 
             </div>
-        </div><!-- End User Card -->
+        </div>
 
-        <!-- Revenue Card -->
         <div class="col-xxl-3 col-md-3">
             <div class="card info-card revenue-card">
             <div class="card-body">
-                <h5 class="card-title">Message Today</span></h5>
+                <h5 class="card-title">Connected Users</span></h5>
 
                 <div class="d-flex align-items-center">
                 <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
                     <i class="bx bx-envelope"></i>
                 </div>
                 <div class="ps-3">
-                    <h6><%= messagesToday %></h6>
+                    <h6><%= connectedUsers %></h6>
                 </div>
                 </div>
             </div>
 
             </div>
-        </div><!-- End Revenue Card -->
+        </div>
 
-        <!-- Customers Card -->
         <div class="col-xxl-3 col-md-3">
 
             <div class="card info-card customers-card">
 
-            <div class="filter">
-                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                <li class="dropdown-header text-start">
-                    <h6>Filter</h6>
-                </li>
-
-                <li><a class="dropdown-item" href="#">Today</a></li>
-                <li><a class="dropdown-item" href="#">This Month</a></li>
-                <li><a class="dropdown-item" href="#">This Year</a></li>
-                </ul>
-            </div>
-
             <div class="card-body">
-                <h5 class="card-title">Customers <span>| This Year</span></h5>
+                <h5 class="card-title">Success Rate</h5>
 
                 <div class="d-flex align-items-center">
-                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                    <i class="bi bi-people"></i>
+                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                        <i class="bx bxs-user-check"></i>
+                    </div>
+                    <div class="ps-3">
+                        <h6><%= successRate %>%</h6>
+                    </div>
                 </div>
-                <div class="ps-3">
-                    <h6>1244</h6>
-                    <span class="text-danger small pt-1 fw-bold">12%</span> <span class="text-muted small pt-2 ps-1">decrease</span>
-
-                </div>
-                </div>
-
             </div>
             </div>
 
-        </div><!-- End Customers Card -->
+        </div>
 
-        <!-- Customers Card -->
         <div class="col-xxl-3 col-md-3">
 
             <div class="card info-card customers-card">
+                <div class="card-body">
+                    <h5 class="card-title">API Requests</span></h5>
 
-            <div class="filter">
-                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                <li class="dropdown-header text-start">
-                    <h6>Filter</h6>
-                </li>
-
-                <li><a class="dropdown-item" href="#">Today</a></li>
-                <li><a class="dropdown-item" href="#">This Month</a></li>
-                <li><a class="dropdown-item" href="#">This Year</a></li>
-                </ul>
-            </div>
-
-            <div class="card-body">
-                <h5 class="card-title">Customers <span>| This Year</span></h5>
-
-                <div class="d-flex align-items-center">
-                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                    <i class="bi bi-people"></i>
-                </div>
-                <div class="ps-3">
-                    <h6>1244</h6>
-                    <span class="text-danger small pt-1 fw-bold">12%</span> <span class="text-muted small pt-2 ps-1">decrease</span>
+                    <div class="d-flex align-items-center">
+                        <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="bx bx-chat"></i>
+                        </div>
+                        <div class="ps-3">
+                            <h6><%= apiRequestsToday %></h6>
+                        </div>
+                    </div>
 
                 </div>
-                </div>
-
-            </div>
             </div>
 
-        </div><!-- End Customers Card -->
+        </div>
     </div>
+
     <div class="row">
-        <!-- Stat Cards -->
-        <div class="col-md-3">
-        <div class="card text-white bg-primary mb-3">
-            <div class="card-body">
-            <h5 class="card-title">Total User</h5>
-            <p class="card-text fs-4"><%= totalUsers %></p>
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Aktivitas Pesan (7 Hari Terakhir)</h5>
+                    <canvas id="messageChart" height="100"></canvas>
+                </div>
             </div>
         </div>
-        </div>
-        
-        <div class="col-md-3">
-        <div class="card text-white bg-success mb-3">
-            <div class="card-body">
-            <h5 class="card-title">Pesan Hari Ini</h5>
-            <p class="card-text fs-4"><%= messagesToday %></p>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Distribusi Status Pesan</h5>
+                    <% if (pieLabels.length > 0 && pieData.some(val => val > 0)) { %>
+                        <canvas id="statusPieChart" height="100"></canvas>
+                    <% } else { %>
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-pie-chart" style="font-size: 6rem;"></i><br>
+                            Tidak ada data status pesan untuk ditampilkan.
+                        </div>
+                    <% } %>
+                </div>
             </div>
-        </div>
-        </div>
-        
-        <div class="col-md-3">
-        <div class="card text-white bg-info mb-3">
-            <div class="card-body">
-            <h5 class="card-title">Success Rate</h5>
-            <p class="card-text fs-4"><%= successRate %>%</p>
-            </div>
-        </div>
-        </div>
-        
-        <div class="col-md-3">
-        <div class="card text-white bg-secondary mb-3">
-            <div class="card-body">
-            <h5 class="card-title">Last Message</h5>
-            <p class="card-text"><%= lastMessage %></p>
-            </div>
-        </div>
-        </div>
-    </div>
-
-    <!-- Table Monitoring Sesi -->
-    <div class="card mt-4">
-        <div class="card-body">
-        <h5 class="card-title">Monitoring Sesi WhatsApp</h5>
-
-        <table class="table table-bordered">
-            <thead>
-            <tr>
-                <th>Nama</th>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-            </thead>
-            <tbody>
-            <% sessionList.forEach(session => { %>
-            <tr>
-                <td><%= session.name %></td>
-                <td><%= session.username %></td>
-                <td><%= session.email %></td>
-                <td><%= session.role %></td>
-                <td>
-                <span class="badge 
-                    <%= session.status === 'connected' ? 'bg-success' :
-                        session.status === 'qr' ? 'bg-warning' :
-                        session.status === 'auth_failure' || session.status === 'disconnected' ? 'bg-danger' :
-                        'bg-secondary' %>">
-                    <%= session.status %>
-                </span>
-                </td>
-                <td>
-                <button class="btn btn-danger btn-sm" onclick="confirmReset('<%= session.id %>')">Reset Session</button>
-                <button class="btn btn-warning btn-sm" onclick="confirmForceLogout('<%= session.id %>')">Force Logout</button>
-                </td>
-            </tr>
-            <% }) %>
-            </tbody>
-        </table>
         </div>
     </div>
 
     <!-- SweetAlert Script -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/assets/js/chart.js"></script>
     <script>
-    function confirmReset(userId) {
-    Swal.fire({
-        title: 'Reset Session?',
-        text: 'Session user akan dihapus dan harus login ulang.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        confirmButtonText: 'Ya, reset!',
-        cancelButtonText: 'Batal'
-    }).then((result) => {
-        if (result.isConfirmed) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/admin/sessions/${userId}/reset`;
-        document.body.appendChild(form);
-        form.submit();
-        }
-    });
-    }
+        const ctx = document.getElementById('messageChart').getContext('2d');
+        const messageChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: <%- chartLabels %>,
+                datasets: [{
+                label: 'Jumlah Pesan',
+                data: <%- chartData %>,
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.2)',
+                fill: true,
+                tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                    stepSize: 1
+                    }
+                }
+                },
+                plugins: {
+                legend: {
+                    display: true
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+                }
+            }
+        });
 
-    function confirmForceLogout(userId) {
-    Swal.fire({
-        title: 'Force Logout?',
-        text: 'User akan dipaksa logout dari sesi WhatsApp.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#f0ad4e',
-        confirmButtonText: 'Ya, logout!',
-        cancelButtonText: 'Batal'
-    }).then((result) => {
-        if (result.isConfirmed) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/admin/sessions/${userId}/force-logout`;
-        document.body.appendChild(form);
-        form.submit();
+        const pieCtx = document.getElementById('statusPieChart').getContext('2d');
+        const statusPieChart = new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: <%- JSON.stringify(pieLabels) %>,
+                datasets: [{
+                label: 'Distribusi Status',
+                data: <%- JSON.stringify(pieData) %>,
+                backgroundColor: [
+                    '#28a745', // success
+                    '#dc3545', // failed
+                    '#ffc107', // pending
+                    '#6c757d', // unknown
+                    '#007bff'  // custom
+                ],
+                borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+                }
+            }
+        });
+
+        function confirmReset(userId) {
+            Swal.fire({
+                title: 'Reset Session?',
+                text: 'Session user akan dihapus dan harus login ulang.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Ya, reset!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/admin/sessions/${userId}/reset`;
+                document.body.appendChild(form);
+                form.submit();
+                }
+            });
         }
-    });
-    }
+
+        function confirmForceLogout(userId) {
+            Swal.fire({
+                title: 'Force Logout?',
+                text: 'User akan dipaksa logout dari sesi WhatsApp.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f0ad4e',
+                confirmButtonText: 'Ya, logout!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/admin/sessions/${userId}/force-logout`;
+                document.body.appendChild(form);
+                form.submit();
+                }
+            });
+        }
     </script>
 
 </section>

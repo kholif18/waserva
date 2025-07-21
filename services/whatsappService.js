@@ -21,7 +21,8 @@ const {
     normalizePhoneNumber
 } = require('../utils/phone');
 const {
-    retrySend
+    retrySend,
+    isRateLimited
 } = require('../utils/retry');
 const {
     isQueueFull,
@@ -94,12 +95,12 @@ async function startSession(userId) {
             }
 
             const files = fs.readdirSync(sessionPath);
-            if (files.length === 0) {
+            if (files.length === 0 || !isValidSessionFolder(sessionPath)) {
                 fs.rmSync(sessionPath, {
                     recursive: true,
                     force: true
                 });
-                await log(userId, 'INFO', 'Session folder kosong dihapus.');
+                await log(userId, 'WARN', 'Folder session kosong/tidak valid dihapus untuk pemulihan ulang.');
             }
         }
 
@@ -114,7 +115,7 @@ async function startSession(userId) {
     }
 
     // Sekarang mulai WA Client
-    console.log(`📲 Membuat WhatsApp client untuk userId ${userId}`);
+    console.log(`Membuat WhatsApp client untuk userId ${userId}`);
     const client = new Client({
         authStrategy: new LocalAuth({
             clientId: sessionKey,
@@ -123,6 +124,7 @@ async function startSession(userId) {
         puppeteer: {
             headless: true,
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome',
+            protocolTimeout: 60000,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -131,7 +133,10 @@ async function startSession(userId) {
                 '--disable-features=site-per-process',
                 '--window-size=1920,1080'
             ]
-        }
+        },
+        takeoverOnConflict: true, // Tambahkan ini
+        takeoverTimeoutMs: 5000, // Waktu tunggu sebelum reconnect
+        restartOnAuthFail: true
     });
 
     sessions[sessionKey] = {
@@ -168,6 +173,23 @@ async function startSession(userId) {
             status: 'connected'
         });
         await log(userId, 'INFO', 'WhatsApp session connected.');
+
+        // Backup folder session
+        const sessionFolder = path.join(sessionBasePath, `session-${sessionKey}`);
+        const backupFolder = path.join(sessionBasePath, `backup-${sessionKey}-${Date.now()}`);
+
+        try {
+            if (fs.existsSync(sessionFolder)) {
+                fs.cpSync(sessionFolder, backupFolder, {
+                    recursive: true
+                });
+                await log(userId, 'INFO', `Backup sesi berhasil disimpan: ${backupFolder}`);
+            } else {
+                await log(userId, 'WARN', `Folder sesi tidak ditemukan saat ready: ${sessionFolder}`);
+            }
+        } catch (err) {
+            await log(userId, 'ERROR', `Gagal membuat backup sesi: ${err.message}`);
+        }
     });
 
     client.on('auth_failure', async () => {
@@ -197,6 +219,15 @@ async function startSession(userId) {
             status: 'disconnected',
             reason
         });
+
+        const sessionFolder = path.join(sessionBasePath, `session-${sessionKey}`);
+        const backupFolder = path.join(sessionBasePath, `backup-${sessionKey}-${Date.now()}`);
+        if (fs.existsSync(sessionFolder)) {
+            fs.cpSync(sessionFolder, backupFolder, {
+                recursive: true
+            });
+            await log(userId, 'INFO', `Backup sesi disimpan sebelum disconnect: ${backupFolder}`);
+        }
 
         try {
             await client.destroy();
@@ -270,6 +301,117 @@ async function logoutSession(userId) {
     }
 }
 
+async function resetUserSessionById(userId) {
+    const sessionKey = getSessionKey(userId);
+    const sessionPath = path.join(sessionBasePath, `session-${sessionKey}`);
+    const singletonLock = path.join(sessionPath, 'SingletonLock');
+
+    await log(userId, 'INFO', `Memulai resetSession()`);
+
+    // Destroy client jika masih aktif
+    const client = getClient(userId);
+    if (client) {
+        await log(userId, 'INFO', 'Client aktif ditemukan. Mematikan...');
+        try {
+            await client.destroy();
+        } catch (err) {
+            await log(userId, 'WARN', `Gagal destroy client: ${err.message}`);
+        }
+        removeClient(userId);
+    }
+
+    // Tunggu jika ada file lock
+    if (fs.existsSync(singletonLock)) {
+        await log(userId, 'WARN', 'Menunggu file SingletonLock dihapus sebelum reset...');
+        const start = Date.now();
+        while (fs.existsSync(singletonLock)) {
+            if (Date.now() - start > 5000) {
+                await log(userId, 'ERROR', 'Reset gagal: SingletonLock tidak hilang setelah 5 detik.');
+                throw new Error('SingletonLock still exists.');
+            }
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+    }
+
+    // Hapus folder session
+    if (fs.existsSync(sessionPath)) {
+        try {
+            fs.rmSync(sessionPath, {
+                recursive: true,
+                force: true
+            });
+            await log(userId, 'INFO', 'Session folder berhasil dihapus.');
+        } catch (err) {
+            await log(userId, 'ERROR', `Gagal menghapus folder session: ${err.message}`);
+            throw err;
+        }
+    } else {
+        await log(userId, 'INFO', 'Folder session tidak ditemukan saat reset.');
+    }
+
+    try {
+        await startSession(userId); // gunakan service startSession()
+        await log(userId, 'INFO', 'Sesi berhasil dimulai ulang setelah reset.');
+    } catch (err) {
+        await log(userId, 'ERROR', `Gagal memulai ulang sesi setelah reset: ${err.message}`);
+        throw err;
+    }
+}
+
+async function recoverAllSessionsOnStart() {
+    console.log('Memulihkan sesi-sesi WhatsApp yang ada...');
+
+    if (!fs.existsSync(sessionBasePath)) {
+        console.log('Folder sessions tidak ditemukan. Lewati pemulihan.');
+        return;
+    }
+
+    const sessionFolders = fs.readdirSync(sessionBasePath).filter((folder) => {
+        const fullPath = path.join(sessionBasePath, folder);
+        return fs.lstatSync(fullPath).isDirectory() && folder.startsWith('session-');
+    });
+
+    for (const folderName of sessionFolders) {
+        const sessionName = folderName; // misalnya: session-2
+        const sessionPath = path.join(sessionBasePath, sessionName);
+
+        const lockFile = path.join(sessionPath, 'SingletonLock');
+        if (fs.existsSync(lockFile)) {
+            console.warn(`Menghapus file SingletonLock untuk ${sessionName}`);
+            try {
+                fs.unlinkSync(lockFile);
+            } catch (err) {
+                console.error(`Gagal menghapus SingletonLock: ${err.message}`);
+                continue; // Lewati sesi ini
+            }
+        }
+
+        // Cek apakah sudah ada client aktif di sessionManager
+        const client = getClient(sessionName);
+        if (client) {
+            console.log(`Sesi ${sessionName} sudah aktif. Lewati.`);
+            continue;
+        }
+
+        // Ekstrak userId dari nama folder: "session-2" -> 2
+        const userId = parseInt(sessionName.replace('session-', ''), 10);
+        if (isNaN(userId)) {
+            console.warn(`Tidak dapat ekstrak userId dari ${sessionName}. Lewati.`);
+            continue;
+        }
+
+        // Panggil kembali startSession
+        try {
+            console.log(`Memulai ulang sesi: ${sessionName}`);
+            await startSession(userId);
+        } catch (err) {
+            console.error(`Gagal memulai ulang sesi ${sessionName}:`, err.message);
+        }
+    }
+
+    console.log('Pemulihan sesi selesai.');
+}
+
 function isClientReady(userId) {
     const sessionKey = getSessionKey(userId);
     const session = sessions[sessionKey];
@@ -290,7 +432,7 @@ function enableInitActiveSessions() {
 
 async function initActiveSessions() {
     if (!isSafeToInit) {
-        console.warn('⚠️ initActiveSessions() diblokir. Panggil enableInitActiveSessions() terlebih dahulu.');
+        console.warn('initActiveSessions() diblokir. Panggil enableInitActiveSessions() terlebih dahulu.');
         return;
     }
 
@@ -322,6 +464,57 @@ async function getAllSessionStatus() {
             status
         };
     });
+}
+
+function isValidSessionFolder(sessionPath) {
+    if (!fs.existsSync(sessionPath)) return false;
+    const files = fs.readdirSync(sessionPath);
+    // File penting biasanya ada saat session valid
+    return files.includes('Default') || files.includes('PreKeys');
+}
+
+async function restoreFromBackupIfMissing() {
+    const folders = fs.readdirSync(sessionBasePath);
+
+    const backups = folders.filter(name => name.startsWith('backup-'));
+    const sessions = folders.filter(name => name.startsWith('session-'));
+
+    for (const backup of backups) {
+        const sessionKey = backup.split('-')[1];
+        const sessionFolder = `session-${sessionKey}`;
+        const sessionPath = path.join(sessionBasePath, sessionFolder);
+
+        const needsRestore = !fs.existsSync(sessionPath) ||
+            fs.readdirSync(sessionPath).length === 0 ||
+            !isValidSessionFolder(sessionPath);
+
+        if (needsRestore) {
+            const fromPath = path.join(sessionBasePath, backup);
+            const toPath = sessionPath;
+
+            try {
+                fs.cpSync(fromPath, toPath, {
+                    recursive: true
+                });
+                console.log(`♻️  Sesi "${sessionKey}" dipulihkan dari backup.`);
+            } catch (err) {
+                console.error(`❌ Gagal restore backup untuk ${sessionKey}:`, err.message);
+            }
+        }
+    }
+}
+
+async function boot() {
+    const {
+        validateSessionFolders
+    } = require('../middlewares/sessionBootValidator');
+    validateSessionFolders();
+
+    await restoreFromBackupIfMissing();
+
+    await recoverAllSessionsOnStart();
+    enableInitActiveSessions();
+    await initActiveSessions();
 }
 
 // ========== Messaging ==========
@@ -864,7 +1057,10 @@ module.exports = {
     setSocketInstance,
     startSession,
     logoutSession,
+    resetUserSessionById,
     getStatus,
+    boot,
+    recoverAllSessionsOnStart,
     getClient,
     isClientReady,
     enableInitActiveSessions,
