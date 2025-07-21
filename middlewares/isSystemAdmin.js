@@ -24,5 +24,7 @@ module.exports = function isSystemAdmin(req, res, next) {
         });
     }
 
+    console.log('[Middleware]', req.method, req.originalUrl, 'Accept:', req.headers.accept);
+
     next();
 };
