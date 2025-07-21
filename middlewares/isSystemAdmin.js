@@ -1,4 +1,6 @@
 module.exports = function isSystemAdmin(req, res, next) {
+    console.log('[DEBUG] Session user:', req.session?.user);
+
     if (!req.session?.user) {
         if (req.xhr || req.headers.accept.includes('application/json')) {
             return res.status(401).json({
@@ -26,4 +28,3 @@ module.exports = function isSystemAdmin(req, res, next) {
     console.log('[Middleware]', req.method, req.originalUrl, 'Accept:', req.headers.accept);
     next();
 };
-

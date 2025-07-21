@@ -1,8 +1,16 @@
 // middlewares/requireLogin.js
 module.exports = function requireLogin(req, res, next) {
-    if (req.session && req.session.user) {
+    if (req.session?.user) {
         return next();
-    } else {
-        return res.redirect('/login');
     }
+
+    // Jika permintaan berasal dari fetch/ajax
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+        return res.status(401).json({
+            error: 'Unauthorized'
+        });
+    }
+
+    // Permintaan biasa, redirect ke login
+    return res.redirect('/login');
 };
