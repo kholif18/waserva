@@ -13,7 +13,8 @@ const {
 const whatsappService = require('./services/whatsappService');
 const {
   sequelize,
-  User
+  User,
+  AdminSetting
 } = require('./models');
 const {
   setSocketInstance
@@ -79,7 +80,7 @@ app.use(session({
 }));
 app.use(flash());
 
-// Middleware global (user & flash)
+// Middleware global (user, flash, admin settings)
 app.use(async (req, res, next) => {
   res.locals.success = req.flash('success') || [];
   res.locals.error = req.flash('error') || [];
@@ -94,6 +95,28 @@ app.use(async (req, res, next) => {
     }
   } else {
     res.locals.user = null;
+  }
+
+  // Admin Settings: logo & appName
+  try {
+    const adminSettings = await AdminSetting.findAll({
+      where: {
+        key: ['logo', 'appName']
+      }
+    });
+
+    const map = {};
+    adminSettings.forEach(setting => {
+      map[setting.key] = setting.value;
+    });
+
+    res.locals.appLogo = map.logo || '/assets/img/logo.png';
+    res.locals.appName = map.appName || 'Waserva';
+
+  } catch (err) {
+    console.error('Gagal memuat AdminSettings:', err);
+    res.locals.appLogo = '/assets/img/logo.png';
+    res.locals.appName = 'Waserva';
   }
 
   next();

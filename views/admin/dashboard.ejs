@@ -144,31 +144,38 @@
             }
         });
 
+        const pieLabels = <%- JSON.stringify(pieLabels) %>;
+        const pieData = <%- JSON.stringify(pieData) %>;
+
+        const statusColorMap = {
+            success: '#28a745',
+            failed: '#dc3545',
+            pending: '#ffc107',
+            unknown: '#6c757d',
+            custom: '#007bff'
+        };
+
+        const backgroundColors = pieLabels.map(label => statusColorMap[label] || '#999');
+
         const pieCtx = document.getElementById('statusPieChart').getContext('2d');
         const statusPieChart = new Chart(pieCtx, {
             type: 'pie',
             data: {
-                labels: <%- JSON.stringify(pieLabels) %>,
-                datasets: [{
+            labels: pieLabels,
+            datasets: [{
                 label: 'Distribusi Status',
-                data: <%- JSON.stringify(pieData) %>,
-                backgroundColor: [
-                    '#28a745', // success
-                    '#dc3545', // failed
-                    '#ffc107', // pending
-                    '#6c757d', // unknown
-                    '#007bff'  // custom
-                ],
+                data: pieData,
+                backgroundColor: backgroundColors,
                 borderWidth: 1
-                }]
+            }]
             },
             options: {
-                responsive: true,
-                plugins: {
+            responsive: true,
+            plugins: {
                 legend: {
-                    position: 'bottom'
+                position: 'bottom'
                 }
-                }
+            }
             }
         });
 

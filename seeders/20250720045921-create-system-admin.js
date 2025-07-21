@@ -18,11 +18,34 @@ module.exports = {
       createdAt: new Date(),
       updatedAt: new Date()
     }], {});
+    
+    await queryInterface.bulkInsert('AdminSettings', [{
+        key: 'logo',
+        value: '/assets/img/logo.png',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        key: 'appName',
+        value: 'aserva',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        key: 'allow_registration',
+        value: 'true',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ]);
   },
 
-  async down (queryInterface, Sequelize) {
+  async down(queryInterface, Sequelize) {
     await queryInterface.bulkDelete('Users', {
       username: 'admin'
+    }, {});
+    await queryInterface.bulkDelete('AdminSettings', {
+      key: ['logo', 'appName', 'allow_registration']
     }, {});
   }
 };

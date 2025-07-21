@@ -8,6 +8,8 @@ const {
     fn,
     col
 } = require('sequelize');
+const fs = require('fs');
+const path = require('path');
 
 exports.dashboard = async (req, res) => {
     try {
@@ -179,4 +181,35 @@ exports.viewAdminSettings = (req, res) => {
         title: 'Pengaturan Admin',
         activePage: 'admin-settings'
     });
+};
+
+exports.checkUpdate = async (req, res) => {
+    try {
+        const localVersion = require('../package.json').version;
+
+        // Contoh: versi terbaru disimpan dalam file update-info.json
+        const updateInfoPath = path.join(__dirname, '../update-info.json');
+        const updateData = JSON.parse(fs.readFileSync(updateInfoPath, 'utf-8'));
+        const latestVersion = updateData.version;
+
+        if (localVersion !== latestVersion) {
+            return res.json({
+                updateAvailable: true,
+                currentVersion: localVersion,
+                latestVersion,
+                changelog: updateData.changelog || null,
+            });
+        } else {
+            return res.json({
+                updateAvailable: false,
+                currentVersion: localVersion,
+                latestVersion,
+            });
+        }
+    } catch (err) {
+        console.error('Gagal memeriksa update:', err);
+        return res.status(500).json({
+            error: 'Gagal memeriksa update'
+        });
+    }
 };

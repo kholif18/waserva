@@ -1,7 +1,8 @@
-module.exports = function (req, res, next) {
+// middlewares/requireLogin.js
+module.exports = function requireLogin(req, res, next) {
     if (req.session && req.session.user) {
         return next();
     } else {
-        return res.redirect('/login'); // bisa diganti sesuai kebutuhan
+        return res.redirect('/login');
     }
 };

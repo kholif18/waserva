@@ -28,6 +28,8 @@ exports.updateAdminProfile = async (req, res) => {
             name,
             username,
             email,
+            phone,
+            address,
             newpassword,
             renewpassword,
             remove_avatar
@@ -69,7 +71,9 @@ exports.updateAdminProfile = async (req, res) => {
         const updateData = {
             name: name.trim(),
             username: username.trim(),
-            email: email.trim()
+            email: email.trim(),
+            phone: phone ? phone.trim() : null,
+            address: address ? address.trim() : null
         };
 
         if (newpassword) {

@@ -59,13 +59,19 @@ exports.updateUserProfile = async (id, data) => {
 };
 
 exports.findUserByUsernameOrEmail = async (username, email, excludeId) => {
+    const orConditions = [];
+    if (username) orConditions.push({
+        username
+    });
+    if (email) orConditions.push({
+        email
+    });
+
+    if (orConditions.length === 0) return null; // tidak ada kondisi, tidak perlu query
+
     return await User.findOne({
         where: {
-            [Op.or]: [{
-                username
-            }, {
-                email
-            }],
+            [Op.or]: orConditions,
             id: {
                 [Op.ne]: excludeId
             }

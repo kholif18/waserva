@@ -4,8 +4,8 @@
       <div class="col-xl-4">
         <div class="card">
           <div class="card-body profile-card pt-4 d-flex flex-column align-items-center">
-            <img src="/assets/img/logo.png" alt="Logo" class="rounded">
-            <h2><%= settings.appName || 'Waserva' %></h2>
+            <img id="logoPreview" src="<%= appLogo %>" alt="Logo" class="rounded mb-3" style="max-width: 120px; max-height: 120px;">
+            <h2><%= settings.appName%></h2>
           </div>
         </div>
 
@@ -15,12 +15,24 @@
 
             <div class="mb-4">
               <label for="logo" class="form-label">App Logo</label>
-              <input type="file" class="form-control" id="logo" name="logo">
+              <input type="file" class="form-control d-none" id="logo" name="logo" accept="image/*">
+              <button type="button" class="form-control btn btn-primary" onclick="document.getElementById('logo').click()">
+                <i class="bx bx-upload"></i> Upload Logo
+              </button>
+              <span id="logoFilename" class="ms-2 text-muted"></span>
             </div>
 
             <div class="mb-4">
               <label for="appName" class="form-label">App Name</label>
               <input type="text" class="form-control" id="appName" name="appName" value="<%= settings.appName || '' %>" required>
+            </div>
+
+            <div class="mb-5">
+              <label class="form-label">Registration Form</label>
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="allow_registration" type="checkbox" id="toggleRegistration" <%= settings.allow_registration === 'true' ? 'checked' : '' %>>
+                <label class="form-check-label" for="toggleRegistration">Allow New User Registration</label>
+              </div>
             </div>
           </div>
         </div>
@@ -30,36 +42,49 @@
         <div class="card">
           <div class="card-body">
             <h5 class="mt-4">Email (SMTP Settings)</h5>
+            <small class="mb-4"><i>These settings are used for sending password reset links via email.</i></small>
 
             <div class="mb-3">
               <label for="smtp_host" class="form-label">SMTP Host</label>
               <input type="text" class="form-control" id="smtp_host" name="smtp_host" value="<%= settings.smtp_host || '' %>">
+              <small><i>Default gmail: smtp.gmail.com</i></small>
             </div>
 
             <div class="mb-3">
               <label for="smtp_port" class="form-label">SMTP Port</label>
               <input type="number" class="form-control" id="smtp_port" name="smtp_port" value="<%= settings.smtp_port || '' %>">
+              <small><i>Default gmail: 587</i></small>
             </div>
 
             <div class="mb-3">
               <label for="smtp_user" class="form-label">SMTP Username</label>
               <input type="text" class="form-control" id="smtp_user" name="smtp_user" value="<%= settings.smtp_user || '' %>">
+              <small><i>Default gmail: example@mail.com</i></small>
             </div>
 
             <div class="mb-3">
               <label for="smtp_pass" class="form-label">SMTP Password</label>
               <input type="password" class="form-control" id="smtp_pass" name="smtp_pass" placeholder="******">
+              <small><i>Default gmail: app password from google setting account</i></small>
             </div>
 
             <div class="mb-3">
               <label for="from_email" class="form-label">From Email Address</label>
               <input type="email" class="form-control" id="from_email" name="from_email" value="<%= settings.from_email || '' %>">
+              <small><i>Example: example@mail.com</i></small>
             </div>
+
+            <div class="mb-3">
+              <label for="smtp_name" class="form-label">From Name</label>
+              <input type="text" class="form-control" id="smtp_name" name="smtp_name" value="<%= settings.smtp_name || '' %>">
+              <small><i>Example: Waserva Support</i></small>
+            </div>
+
 
             <div class="mb-3">
               <label for="smtp_secure" class="form-label">Security</label>
               <select class="form-select" id="smtp_secure" name="smtp_secure">
-                <option value="true" <%= settings.smtp_secure === 'true' ? 'selected' : '' %>>SSL/TLS</option>
+                <option value="true" <%= (settings.smtp_secure === 'true' || !settings.smtp_secure) ? 'selected' : '' %>>SSL/TLS</option>
                 <option value="false" <%= settings.smtp_secure === 'false' ? 'selected' : '' %>>None</option>
               </select>
             </div>
@@ -74,6 +99,7 @@
         </div>
       </div>
     </form>
+    <form id="resetForm" method="POST" action="/admin/settings/reset" style="display:none;"></form>
 
     <!-- Update Checker -->
     <div class="card shadow-sm">
@@ -91,39 +117,74 @@
   </div>
 </section>
 
-<!-- Toast -->
-<% if (typeof success !== 'undefined') { %>
-<script>
-  setTimeout(() => {
-    Toastify({
-      text: "<%= success %>",
-      duration: 3000,
-      close: true,
-      gravity: "top",
-      position: "right",
-      backgroundColor: "#28a745"
-    }).showToast();
-  }, 300);
-</script>
+<!-- Toast Success -->
+<% if (Array.isArray(success) && success.length > 0) { %>
+  <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+      <div class="toast align-items-center text-bg-success border-0" role="alert" data-bs-delay="5000">
+          <div class="toast-header bg-success text-white">
+              <i class="bi bi-check-circle-fill me-2"></i>
+              <strong class="me-auto">Success</strong>
+              <small>Just now</small>
+              <button type="button" class="btn-close btn-close-white ms-2 mb-1" data-bs-dismiss="toast"></button>
+          </div>
+          <div class="toast-body">
+              <%= success[0] %>
+          </div>
+      </div>
+  </div>
 <% } %>
 
-<% if (typeof error !== 'undefined') { %>
-<script>
-  setTimeout(() => {
-    Toastify({
-      text: "<%= error %>",
-      duration: 3000,
-      close: true,
-      gravity: "top",
-      position: "right",
-      backgroundColor: "#dc3545"
-    }).showToast();
-  }, 300);
-</script>
+<!-- Toast Error -->
+<% if (Array.isArray(error) && error.length > 0) { %>
+  <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+      <div class="toast align-items-center text-bg-danger border-0" role="alert" data-bs-delay="5000">
+          <div class="toast-header bg-danger text-white">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <strong class="me-auto">Error</strong>
+              <small>Just now</small>
+              <button type="button" class="btn-close btn-close-white ms-2 mb-1" data-bs-dismiss="toast"></button>
+          </div>
+          <div class="toast-body">
+              <%= error[0] %>
+          </div>
+      </div>
+  </div>
 <% } %>
 
 <!-- SweetAlert for Reset -->
 <script>
+  const logoInput = document.getElementById('logo');
+  const logoPreview = document.getElementById('logoPreview');
+  const logoFilename = document.getElementById('logoFilename');
+
+  logoInput.addEventListener('change', function () {
+    const file = this.files[0];
+    if (file) {
+      logoFilename.textContent = file.name;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        logoPreview.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      logoFilename.textContent = '';
+    }
+  });
+
+  document.getElementById('toggleRegistration')?.addEventListener('change', function () {
+    const status = this.checked ? 'true' : 'false';
+    fetch('/admin/settings/update-registration', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ value: status })
+    }).then(res => {
+      if (!res.ok) alert('Failed to update registration setting');
+    });
+  });
+
   document.getElementById('resetBtn')?.addEventListener('click', () => {
     Swal.fire({
       title: 'Reset to Default?',
@@ -134,12 +195,54 @@
       cancelButtonText: 'Batal'
     }).then((result) => {
       if (result.isConfirmed) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/admin/settings/reset';
-        document.body.appendChild(form);
-        form.submit();
+        document.getElementById('resetForm').submit();
       }
     });
   });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.toast').forEach(toastEl => {
+      const toast = new bootstrap.Toast(toastEl);
+      toast.show();
+    });
+  });
+
+  document.getElementById('checkUpdateBtn').addEventListener('click', function () {
+  const spinner = document.getElementById('checkSpinner');
+  const resultContainer = document.getElementById('updateResult');
+  const cardBody = document.getElementById('cardBodyContainer');
+
+  spinner.classList.remove('d-none');
+  resultContainer.innerHTML = '';
+  cardBody.classList.remove('d-none');
+
+  fetch('/admin/check-update')
+    .then(res => res.json())
+    .then(data => {
+      spinner.classList.add('d-none');
+      if (data.error) {
+        resultContainer.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+      } else if (data.updateAvailable) {
+        resultContainer.innerHTML = `
+          <div class="alert alert-warning">
+            <strong>Update tersedia!</strong><br>
+            Versi saat ini: <code>${data.currentVersion}</code><br>
+            Versi terbaru: <code>${data.latestVersion}</code><br>
+            ${data.changelog ? `<pre>${data.changelog}</pre>` : ''}
+          </div>
+        `;
+      } else {
+        resultContainer.innerHTML = `
+          <div class="alert alert-success">
+            Aplikasi sudah menggunakan versi terbaru: <code>${data.currentVersion}</code>
+          </div>
+        `;
+      }
+    })
+    .catch(err => {
+      spinner.classList.add('d-none');
+      resultContainer.innerHTML = `<div class="alert alert-danger">Terjadi kesalahan saat memeriksa update.</div>`;
+      console.error(err);
+    });
+});
 </script>

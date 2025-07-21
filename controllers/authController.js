@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const {
     User,
     Setting,
+    AdminSetting,
     PasswordResetToken
 } = require('../models');
 const nodemailer = require('nodemailer');
@@ -12,6 +13,9 @@ const crypto = require('crypto');
 const logService = require('../services/logService');
 const whatsappSessionController = require('./whatsappSessionController');
 const whatsappService = require('../services/whatsappService');
+const {
+    getMultipleSettings
+} = require('../services/adminSettingService');
 
 // Fungsi validasi password kuat
 function isStrongPassword(password) {
@@ -42,6 +46,19 @@ module.exports = {
     },
 
     register: async (req, res) => {
+        const allowReg = await AdminSetting.findOne({
+            where: {
+                key: 'allow_registration'
+            }
+        });
+        if (!allowReg || allowReg.value !== 'true') {
+            return res.status(403).render('errors/403', {
+                layout: false,
+                user: req.session.user || null,
+                title: 'Registration Disabled',
+                message: 'User registration is currently disabled by the administrator.'
+            });
+        }
         const {
             name,
             username,
@@ -143,7 +160,8 @@ module.exports = {
                 id: user.id,
                 name: user.name,
                 username: user.username,
-                profile_image: user.profile_image
+                profile_image: user.profile_image,
+                role: user.role
             };
 
             // Log registrasi
@@ -344,18 +362,22 @@ module.exports = {
                 flashMessage = 'Sesi WhatsApp Anda belum aktif. Silakan kirim link melalui email.';
             }
         } else if (method === 'email' && user.email) {
+            const smtp = await getMultipleSettings([
+                'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_secure', 'from_email', 'appName'
+            ]);
+
             const transporter = nodemailer.createTransport({
-                host: process.env.SMTP_HOST,
-                port: process.env.SMTP_PORT || 587,
-                secure: false,
+                host: smtp.smtp_host,
+                port: parseInt(smtp.smtp_port || 587),
+                secure: smtp.smtp_secure === 'true', // true untuk SSL/TLS
                 auth: {
-                    user: process.env.SMTP_USER,
-                    pass: process.env.SMTP_PASS
+                    user: smtp.smtp_user,
+                    pass: smtp.smtp_pass
                 }
             });
 
             await transporter.sendMail({
-                from: `"${process.env.SMTP_NAME || 'Waserva Support'}" <${process.env.SMTP_USER}>`,
+                from: `"${smtp.smtp_name || 'Waserva Support'}" <${smtp.from_email || smtp.smtp_user}>`,
                 to: user.email,
                 subject: 'Reset Password',
                 html: `

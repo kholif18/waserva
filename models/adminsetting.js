@@ -1,16 +1,19 @@
-'use strict';
+const {
+    Model
+} = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-    const AdminSetting = sequelize.define('AdminSetting', {
+    class AdminSetting extends Model {}
+    AdminSetting.init({
         key: {
             type: DataTypes.STRING,
-            unique: true,
-            allowNull: false
+            allowNull: false,
+            unique: true
         },
-        value: {
-            type: DataTypes.TEXT,
-            allowNull: true
-        }
-    }, {});
-
+        value: DataTypes.TEXT
+    }, {
+        sequelize,
+        modelName: 'AdminSetting',
+        tableName: 'AdminSettings'
+    });
     return AdminSetting;
 };
