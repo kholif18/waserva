@@ -1,60 +1,145 @@
-<section>
-    <div class="card">
-        <div class="card-body">
+<section class="section profile">
+  <div class="row">
+    <form class="row" method="POST" action="/admin/settings/save" enctype="multipart/form-data">
+      <div class="col-xl-4">
+        <div class="card">
+          <div class="card-body profile-card pt-4 d-flex flex-column align-items-center">
+            <img src="/assets/img/logo.png" alt="Logo" class="rounded">
+            <h2><%= settings.appName || 'Waserva' %></h2>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
             <h4 class="card-title">System Configuration</h4>
-            <form class="row g-3" method="POST" action="/settings/save">
-                <div class="col-6">
-                    <label for="timeout" class="form-label">Delivery Timeout (seconds)</label>
-                    <input type="number" class="form-control" id="timeout" name="timeout" required>
-                    <small><i>Maximum time to wait for a response when sending a message</i></small>
-                </div>
-                <div class="col-6">
-                    <label for="max-retry" class="form-label">Maximum Retry Times</label>
-                    <input type="number" class="form-control" id="max-retry" name="max-retry" required>
-                    <small><i>Number of retries if delivery fails</i></small>
-                </div>
-                <div class="col-6">
-                    <label for="retry-interval" class="form-label">Retry Interval (seconds)</label>
-                    <input type="number" class="form-control" id="retry-interval" name="retry-interval" required>
-                    <small><i>Waiting time between retries</i></small>
-                </div>
-                <div class="col-6">
-                    <label for="max-queue" class="form-label">Maximum Messages in Queue</label>
-                    <input type="number" class="form-control" id="max-queue" name="max-queue" required>
-                    <small><i>Maximum number of messages that can be queued</i></small>
-                </div>
-                <div class="col-6">
-                    <label for="rate_limit_limit" class="form-label">Rate Limit (max requests)</label>
-                    <input type="number" class="form-control" id="rate_limit_limit" name="rate_limit_limit" required>
-                    <small><i>The maximum number of API requests allowed in a given period.</i></small>
-                </div>
-                <div class="col-6">
-                    <label for="rate_limit_decay" class="form-label">Rate Limit Decay (seconds)</label>
-                    <input type="number" class="form-control" id="rate_limit_decay" name="rate_limit_decay" required>
-                    <small><i>Time period (in seconds) to reset the number of requests</i></small>
-                </div>
-                <div class="text-center">
-                    <button type="submit" class="btn btn-primary"><i class="bx bx-save"></i> Save Change</button>
-                    <button type="button" id="resetBtn" class="btn btn-secondary">
-                        <i class="bx bx-undo"></i> Reset to Default
-                    </button>
-                </div>
-            </form>
-            <form id="resetForm" action="/settings/reset" method="POST" style="display: none;"></form>
-            <!-- Card Update Checker -->
+
+            <div class="mb-4">
+              <label for="logo" class="form-label">App Logo</label>
+              <input type="file" class="form-control" id="logo" name="logo">
+            </div>
+
+            <div class="mb-4">
+              <label for="appName" class="form-label">App Name</label>
+              <input type="text" class="form-control" id="appName" name="appName" value="<%= settings.appName || '' %>" required>
+            </div>
+          </div>
         </div>
-    </div>
+      </div>
+
+      <div class="col-xl-8">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="mt-4">Email (SMTP Settings)</h5>
+
+            <div class="mb-3">
+              <label for="smtp_host" class="form-label">SMTP Host</label>
+              <input type="text" class="form-control" id="smtp_host" name="smtp_host" value="<%= settings.smtp_host || '' %>">
+            </div>
+
+            <div class="mb-3">
+              <label for="smtp_port" class="form-label">SMTP Port</label>
+              <input type="number" class="form-control" id="smtp_port" name="smtp_port" value="<%= settings.smtp_port || '' %>">
+            </div>
+
+            <div class="mb-3">
+              <label for="smtp_user" class="form-label">SMTP Username</label>
+              <input type="text" class="form-control" id="smtp_user" name="smtp_user" value="<%= settings.smtp_user || '' %>">
+            </div>
+
+            <div class="mb-3">
+              <label for="smtp_pass" class="form-label">SMTP Password</label>
+              <input type="password" class="form-control" id="smtp_pass" name="smtp_pass" placeholder="******">
+            </div>
+
+            <div class="mb-3">
+              <label for="from_email" class="form-label">From Email Address</label>
+              <input type="email" class="form-control" id="from_email" name="from_email" value="<%= settings.from_email || '' %>">
+            </div>
+
+            <div class="mb-3">
+              <label for="smtp_secure" class="form-label">Security</label>
+              <select class="form-select" id="smtp_secure" name="smtp_secure">
+                <option value="true" <%= settings.smtp_secure === 'true' ? 'selected' : '' %>>SSL/TLS</option>
+                <option value="false" <%= settings.smtp_secure === 'false' ? 'selected' : '' %>>None</option>
+              </select>
+            </div>
+
+            <div class="text-center">
+              <button type="submit" class="btn btn-primary"><i class="bx bx-save"></i> Save Change</button>
+              <button type="button" id="resetBtn" class="btn btn-secondary">
+                <i class="bx bx-undo"></i> Reset to Default
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <!-- Update Checker -->
     <div class="card shadow-sm">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">Update Checker</h5>
-            <button id="checkUpdateBtn" class="btn btn-info d-flex align-items-center">
-                <span class="spinner-border me-2 d-none"
-                    id="checkSpinner" role="status" aria-hidden="true"></span>
-                Check Update
-            </button>
-        </div>
-        <div class="card-body d-none" id="cardBodyContainer">
-            <div id="updateResult"></div>
-        </div>
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Update Checker</h5>
+        <button id="checkUpdateBtn" class="btn btn-info d-flex align-items-center">
+          <span class="spinner-border me-2 d-none" id="checkSpinner" role="status" aria-hidden="true"></span>
+          Check Update
+        </button>
+      </div>
+      <div class="card-body d-none" id="cardBodyContainer">
+        <div id="updateResult"></div>
+      </div>
     </div>
+  </div>
 </section>
+
+<!-- Toast -->
+<% if (typeof success !== 'undefined') { %>
+<script>
+  setTimeout(() => {
+    Toastify({
+      text: "<%= success %>",
+      duration: 3000,
+      close: true,
+      gravity: "top",
+      position: "right",
+      backgroundColor: "#28a745"
+    }).showToast();
+  }, 300);
+</script>
+<% } %>
+
+<% if (typeof error !== 'undefined') { %>
+<script>
+  setTimeout(() => {
+    Toastify({
+      text: "<%= error %>",
+      duration: 3000,
+      close: true,
+      gravity: "top",
+      position: "right",
+      backgroundColor: "#dc3545"
+    }).showToast();
+  }, 300);
+</script>
+<% } %>
+
+<!-- SweetAlert for Reset -->
+<script>
+  document.getElementById('resetBtn')?.addEventListener('click', () => {
+    Swal.fire({
+      title: 'Reset to Default?',
+      text: 'Seluruh pengaturan akan dikembalikan ke default!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, Reset',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/settings/reset';
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  });
+</script>

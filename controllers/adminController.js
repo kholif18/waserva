@@ -1,6 +1,4 @@
-const sessionManager = require('../services/sessionManager');
 const whatsappService = require('../services/whatsappService');
-const whatsappSessionController = require('./whatsappSessionController');
 const {
     User,
     History
@@ -152,13 +150,20 @@ exports.resetUserSession = async (req, res) => {
 
 exports.forceLogoutSession = async (req, res) => {
     const userId = req.params.id;
+
     try {
-        await whatsappSessionController.logout(userId);
-        req.flash('success', `User ID ${userId} berhasil di-force logout`);
+        const success = await whatsappService.logoutSession(userId);
+
+        if (success) {
+            req.flash('success', `User ID ${userId} berhasil di-force logout`);
+        } else {
+            req.flash('error', `Gagal force logout. Mungkin sesi tidak aktif.`);
+        }
     } catch (err) {
-        console.error('Gagal force logout session:', err);
-        req.flash('error', 'Gagal melakukan force logout');
+        console.error('Gagal force logout session dari admin:', err);
+        req.flash('error', 'Terjadi kesalahan saat force logout');
     }
+
     res.redirect('/admin/sessions');
 };
 

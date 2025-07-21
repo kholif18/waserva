@@ -11,6 +11,9 @@ const {
     Op
 } = require('sequelize');
 const logService = require('./logService');
+const {
+    logAdminOnly
+} = require('./logService');
 const settingService = require('./settingService');
 const {
     History,
@@ -80,7 +83,7 @@ async function startSession(userId) {
 
     // Buat folder 'sessions/' jika belum ada (manual, bukan biarkan LocalAuth)
     if (!fs.existsSync(sessionBasePath)) {
-        console.log('📁 Folder sessions/ belum ada. Membuat secara manual...');
+        console.log('Folder sessions/ belum ada. Membuat secara manual...');
         fs.mkdirSync(sessionBasePath, {
             recursive: true
         });
@@ -101,6 +104,7 @@ async function startSession(userId) {
                     force: true
                 });
                 await log(userId, 'WARN', 'Folder session kosong/tidak valid dihapus untuk pemulihan ulang.');
+                await logAdminOnly(userId, 'WARN', `Admin: folder sesi tidak valid dihapus.`);
             }
         }
 
@@ -116,6 +120,7 @@ async function startSession(userId) {
 
     // Sekarang mulai WA Client
     console.log(`Membuat WhatsApp client untuk userId ${userId}`);
+    await logAdminOnly(userId, 'INFO', `Admin: Membuat WhatsApp client untuk userId ${userId}`);
     const client = new Client({
         authStrategy: new LocalAuth({
             clientId: sessionKey,
@@ -173,6 +178,7 @@ async function startSession(userId) {
             status: 'connected'
         });
         await log(userId, 'INFO', 'WhatsApp session connected.');
+        await logAdminOnly(userId, 'INFO', 'Sesi WhatsApp berhasil tersambung');
 
         // Backup folder session
         const sessionFolder = path.join(sessionBasePath, `session-${sessionKey}`);
@@ -183,10 +189,12 @@ async function startSession(userId) {
                 fs.cpSync(sessionFolder, backupFolder, {
                     recursive: true
                 });
+                cleanupOldBackups(sessionKey);
                 await log(userId, 'INFO', `Backup sesi berhasil disimpan: ${backupFolder}`);
+                await logAdminOnly(userId, 'INFO', `Admin: backup sesi disimpan (${backupFolder})`);
             } else {
                 await log(userId, 'WARN', `Folder sesi tidak ditemukan saat ready: ${sessionFolder}`);
-            }
+            };
         } catch (err) {
             await log(userId, 'ERROR', `Gagal membuat backup sesi: ${err.message}`);
         }
@@ -210,6 +218,7 @@ async function startSession(userId) {
         }
 
         await log(userId, 'ERROR', 'Authentication failed.');
+        await logAdminOnly(userId, 'ERROR', 'Sesi gagal autentikasi (auth_failure)');
     });
 
     client.on('disconnected', async reason => {
@@ -227,6 +236,8 @@ async function startSession(userId) {
                 recursive: true
             });
             await log(userId, 'INFO', `Backup sesi disimpan sebelum disconnect: ${backupFolder}`);
+            await logAdminOnly(userId, 'INFO', `Admin: backup sesi disimpan sebelum disconnect: (${backupFolder})`);
+            cleanupOldBackups(sessionKey);
         }
 
         try {
@@ -238,6 +249,7 @@ async function startSession(userId) {
 
         if (reason !== 'LOGOUT') setTimeout(() => startSession(userId), 5000);
         await log(userId, 'WARN', `Disconnected: ${reason}`);
+        await logAdminOnly(userId, 'WARN', `Admin: sesi WhatsApp terputus: ${reason}`);
     });
 
     client.on('message', async msg => {
@@ -263,7 +275,9 @@ async function startSession(userId) {
         await client.initialize();
         setClient(sessionKey, client);
         await log(userId, 'INFO', 'client.initialize() selesai');
+        await logAdminOnly(userId, 'INFO', `Admin: sesi WhatsApp berhasil dimulai.`);
     } catch (err) {
+        console.error(`[${sessionKey}] Gagal initialize: ${err.message}`);
         await log(userId, 'ERROR', `Gagal memulai sesi WA: ${err.message}`);
     }
 }
@@ -294,6 +308,7 @@ async function logoutSession(userId) {
         }
 
         await log(userId, 'INFO', 'Logout berhasil');
+        await logAdminOnly(userId, 'INFO', 'Admin: sesi berhasil logout.');
         return true;
     } catch (err) {
         await log(userId, 'ERROR', `Logout gagal: ${err.message}`);
@@ -314,8 +329,11 @@ async function resetUserSessionById(userId) {
         await log(userId, 'INFO', 'Client aktif ditemukan. Mematikan...');
         try {
             await client.destroy();
+            await logAdminOnly(userId, 'INFO', 'Admin: sesi berhasil direset.');
         } catch (err) {
             await log(userId, 'WARN', `Gagal destroy client: ${err.message}`);
+            await logAdminOnly(userId, 'ERROR', 'Admin: gagal reset, SingletonLock tidak hilang.');
+
         }
         removeClient(userId);
     }
@@ -404,8 +422,10 @@ async function recoverAllSessionsOnStart() {
         try {
             console.log(`Memulai ulang sesi: ${sessionName}`);
             await startSession(userId);
+            await logAdminOnly(userId, 'INFO', 'Admin: sesi dipulihkan saat startup.');
         } catch (err) {
             console.error(`Gagal memulai ulang sesi ${sessionName}:`, err.message);
+            await logAdminOnly(userId, 'ERROR', `Admin: gagal memulihkan sesi ${userId}.`);
         }
     }
 
@@ -496,13 +516,41 @@ async function restoreFromBackupIfMissing() {
                 fs.cpSync(fromPath, toPath, {
                     recursive: true
                 });
-                console.log(`♻️  Sesi "${sessionKey}" dipulihkan dari backup.`);
+                console.log(`Sesi "${sessionKey}" dipulihkan dari backup.`);
             } catch (err) {
-                console.error(`❌ Gagal restore backup untuk ${sessionKey}:`, err.message);
+                console.error(`Gagal restore backup untuk ${sessionKey}:`, err.message);
             }
         }
     }
 }
+
+async function cleanupOldBackups(sessionKey, userId, maxBackup = 3) {
+    const allBackups = fs.readdirSync(sessionBasePath)
+        .filter(name => name.startsWith(`backup-${sessionKey}-`))
+        .map(name => ({
+            name,
+            path: path.join(sessionBasePath, name),
+            createdAt: fs.statSync(path.join(sessionBasePath, name)).mtimeMs
+        }))
+        .sort((a, b) => b.createdAt - a.createdAt); // dari terbaru ke terlama
+
+    const oldBackups = allBackups.slice(maxBackup);
+
+    for (const backup of oldBackups) {
+        try {
+            fs.rmSync(backup.path, {
+                recursive: true,
+                force: true
+            });
+            console.log(`Backup lama dihapus: ${backup.name}`);
+            await logAdminOnly(userId, 'INFO', `Backup lama dihapus: ${backup.name}`);
+        } catch (err) {
+            console.error(`Gagal hapus backup ${backup.name}:`, err.message);
+            await logAdminOnly(userId, 'ERROR', `Gagal hapus backup ${backup.name}: ${err.message}`);
+        }
+    }
+}
+
 
 async function boot() {
     const {

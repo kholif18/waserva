@@ -1,12 +1,14 @@
 const {
-    Log
+    Log,
+    User
 } = require('../models');
 
-exports.createLog = async ({
+// Fungsi mencatat log
+async function createLog({
     userId,
     level = 'INFO',
     message
-}) => {
+}) {
     try {
         if (!userId || !message) {
             console.warn('Skipping log: userId or message missing.');
@@ -19,14 +21,13 @@ exports.createLog = async ({
             message
         });
 
-        // Opsional: cleanup jika lebih dari 2000 log
         await cleanupLogs(userId);
     } catch (err) {
-        console.error('❌ Error creating log:', err.message, err.errors || err);
+        console.error('[LOGGER] Gagal mencatat log:', err.message);
     }
-};
+}
 
-// Optional: Auto-delete log jika lebih dari 2000
+// Auto-delete log jika melebihi 2000 entri
 async function cleanupLogs(userId) {
     const total = await Log.count({
         where: {
@@ -36,7 +37,6 @@ async function cleanupLogs(userId) {
 
     if (total > 2000) {
         const excess = total - 2000;
-
         const oldest = await Log.findAll({
             where: {
                 userId
@@ -55,3 +55,25 @@ async function cleanupLogs(userId) {
         });
     }
 }
+
+// Log hanya untuk user dengan role admin
+async function logAdminOnly(userId, level, message) {
+    try {
+        const user = await User.findByPk(userId);
+        if (user && user.role === 'admin') {
+            await createLog({
+                userId,
+                level,
+                message
+            });
+        }
+    } catch (err) {
+        console.error('[logAdminOnly] Gagal cek user admin:', err.message);
+    }
+}
+
+// ✅ EXPORT BENAR
+module.exports = {
+    createLog,
+    logAdminOnly
+};
