@@ -1,6 +1,5 @@
 module.exports = function isSystemAdmin(req, res, next) {
-    if (!req.session.user) {
-        // Jika tidak login
+    if (!req.session?.user) {
         if (req.xhr || req.headers.accept.includes('application/json')) {
             return res.status(401).json({
                 error: 'Unauthorized'
@@ -25,6 +24,6 @@ module.exports = function isSystemAdmin(req, res, next) {
     }
 
     console.log('[Middleware]', req.method, req.originalUrl, 'Accept:', req.headers.accept);
-
     next();
 };
+

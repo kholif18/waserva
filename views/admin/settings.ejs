@@ -216,35 +216,41 @@
   resultContainer.innerHTML = '';
   cardBody.classList.remove('d-none');
 
-  fetch('/admin/check-update')
-  .then(res => {
-    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-    return res.json();
-  })
-  .then(data => {
-    spinner.classList.add('d-none');
-
-    if (data.updateAvailable) {
-      resultContainer.innerHTML = `
-        <div class="alert alert-warning">
-          <strong>Update tersedia!</strong><br>
-          Versi saat ini: <code>${data.currentVersion}</code><br>
-          Versi terbaru: <code>${data.latestVersion}</code><br>
-          ${data.changelog ? `<pre>${data.changelog}</pre>` : ''}
-        </div>
-      `;
-    } else {
-      resultContainer.innerHTML = `
-        <div class="alert alert-success">
-          Aplikasi sudah menggunakan versi terbaru: <code>${data.currentVersion}</code>
-        </div>
-      `;
+  fetch('/admin/check-update', {
+    headers: {
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
     }
   })
-  .catch(err => {
-    spinner.classList.add('d-none');
-    resultContainer.innerHTML = `<div class="alert alert-danger">Terjadi kesalahan saat memeriksa update.<br><small>${err.message}</small></div>`;
-    console.error('Update check error:', err);
-  });
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      return res.json();
+    })
+    .then(data => {
+      spinner.classList.add('d-none');
+
+      if (data.updateAvailable) {
+        resultContainer.innerHTML = `
+          <div class="alert alert-warning">
+            <strong>Update tersedia!</strong><br>
+            Versi saat ini: <code>${data.currentVersion}</code><br>
+            Versi terbaru: <code>${data.latestVersion}</code><br>
+            ${data.changelog ? `<pre>${data.changelog}</pre>` : ''}
+          </div>
+        `;
+      } else {
+        resultContainer.innerHTML = `
+          <div class="alert alert-success">
+            Aplikasi sudah menggunakan versi terbaru: <code>${data.currentVersion}</code>
+          </div>
+        `;
+      }
+    })
+    .catch(err => {
+      spinner.classList.add('d-none');
+      resultContainer.innerHTML = `<div class="alert alert-danger">Terjadi kesalahan saat memeriksa update.<br><small>${err.message}</small></div>`;
+      console.error('Update check error:', err);
+    });
+
 });
 </script>
