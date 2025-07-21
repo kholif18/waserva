@@ -10,6 +10,8 @@ const {
 } = require('sequelize');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
+const localVersion = require('../package.json').version;
 
 exports.dashboard = async (req, res) => {
     try {
@@ -185,31 +187,30 @@ exports.viewAdminSettings = (req, res) => {
 
 exports.checkUpdate = async (req, res) => {
     try {
-        const localVersion = require('../package.json').version;
+        // Ambil file package.json dari GitHub (raw content)
+        const repoRawUrl = 'https://raw.githubusercontent.com/kholif18/waserva/main/package.json';
+        const response = await axios.get(repoRawUrl);
+        const remotePackage = response.data;
+        const remoteVersion = remotePackage.version;
 
-        // Contoh: versi terbaru disimpan dalam file update-info.json
-        const updateInfoPath = path.join(__dirname, '../update-info.json');
-        const updateData = JSON.parse(fs.readFileSync(updateInfoPath, 'utf-8'));
-        const latestVersion = updateData.version;
-
-        if (localVersion !== latestVersion) {
+        if (localVersion !== remoteVersion) {
             return res.json({
                 updateAvailable: true,
                 currentVersion: localVersion,
-                latestVersion,
-                changelog: updateData.changelog || null,
+                latestVersion: remoteVersion,
+                changelog: remotePackage.changelog || '- Tidak ada changelog tersedia -'
             });
         } else {
             return res.json({
                 updateAvailable: false,
                 currentVersion: localVersion,
-                latestVersion,
+                latestVersion: remoteVersion
             });
         }
     } catch (err) {
         console.error('Gagal memeriksa update:', err);
         return res.status(500).json({
-            error: 'Gagal memeriksa update'
+            error: 'Gagal memeriksa update dari GitHub'
         });
     }
 };
