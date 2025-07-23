@@ -6,7 +6,10 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const http = require('http');
 const fs = require('fs');
-
+const {
+  logAdminOnly
+} = require('./services/logService');
+const ADMIN_USER_ID = process.env.ADMIN_USER_ID || 1;
 const {
   Server
 } = require('socket.io');
@@ -39,7 +42,6 @@ io.on('connection', (socket) => {
   }
 
   socket.join(sessionId);
-  console.log(`Socket joined session: ${sessionId}`);
 
   const currentSession = global.sessions[sessionId];
   if (currentSession) {
@@ -145,13 +147,14 @@ server.listen(PORT, () => {
 (async () => {
   try {
     await sequelize.authenticate();
-    console.log('Database connected.');
+    await logAdminOnly(ADMIN_USER_ID, 'info', 'Database connected.');
 
     // Booting: validasi folder dan inisialisasi sesi WA
     await whatsappService.boot();
 
-    console.log('Semua sesi WhatsApp berhasil dipulihkan.');
+    await logAdminOnly(ADMIN_USER_ID, 'info', 'Semua sesi WhatsApp berhasil dipulihkan.');
   } catch (error) {
     console.error('Gagal saat proses booting aplikasi:', error);
+    await logAdminOnly(ADMIN_USER_ID, 'error', `Gagal booting: ${error.message}`);
   }
 })();
