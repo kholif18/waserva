@@ -83,7 +83,6 @@ async function startSession(userId) {
 
     // Buat folder 'sessions/' jika belum ada (manual, bukan biarkan LocalAuth)
     if (!fs.existsSync(sessionBasePath)) {
-        console.log('Folder sessions/ belum ada. Membuat secara manual...');
         fs.mkdirSync(sessionBasePath, {
             recursive: true
         });
@@ -119,7 +118,6 @@ async function startSession(userId) {
     }
 
     // Sekarang mulai WA Client
-    console.log(`Membuat WhatsApp client untuk userId ${userId}`);
     await logAdminOnly(userId, 'INFO', `Admin: Membuat WhatsApp client untuk userId ${userId}`);
     const client = new Client({
         authStrategy: new LocalAuth({
@@ -377,10 +375,7 @@ async function resetUserSessionById(userId) {
 }
 
 async function recoverAllSessionsOnStart() {
-    console.log('Memulihkan sesi-sesi WhatsApp yang ada...');
-
     if (!fs.existsSync(sessionBasePath)) {
-        console.log('Folder sessions tidak ditemukan. Lewati pemulihan.');
         return;
     }
 
@@ -407,7 +402,6 @@ async function recoverAllSessionsOnStart() {
         // Cek apakah sudah ada client aktif di sessionManager
         const client = getClient(sessionName);
         if (client) {
-            console.log(`Sesi ${sessionName} sudah aktif. Lewati.`);
             continue;
         }
 
@@ -420,7 +414,6 @@ async function recoverAllSessionsOnStart() {
 
         // Panggil kembali startSession
         try {
-            console.log(`Memulai ulang sesi: ${sessionName}`);
             await startSession(userId);
             await logAdminOnly(userId, 'INFO', 'Admin: sesi dipulihkan saat startup.');
         } catch (err) {
@@ -428,8 +421,6 @@ async function recoverAllSessionsOnStart() {
             await logAdminOnly(userId, 'ERROR', `Admin: gagal memulihkan sesi ${userId}.`);
         }
     }
-
-    console.log('Pemulihan sesi selesai.');
 }
 
 function isClientReady(userId) {
@@ -457,7 +448,6 @@ async function initActiveSessions() {
     }
 
     const users = await User.findAll();
-    console.log('[initActiveSessions] User yang ditemukan di DB:', users.map(u => u.id));
     for (const user of users) {
         try {
             await startSession(user.id);
@@ -516,7 +506,6 @@ async function restoreFromBackupIfMissing() {
                 fs.cpSync(fromPath, toPath, {
                     recursive: true
                 });
-                console.log(`Sesi "${sessionKey}" dipulihkan dari backup.`);
             } catch (err) {
                 console.error(`Gagal restore backup untuk ${sessionKey}:`, err.message);
             }
@@ -542,7 +531,6 @@ async function cleanupOldBackups(sessionKey, userId, maxBackup = 3) {
                 recursive: true,
                 force: true
             });
-            console.log(`Backup lama dihapus: ${backup.name}`);
             await logAdminOnly(userId, 'INFO', `Backup lama dihapus: ${backup.name}`);
         } catch (err) {
             console.error(`Gagal hapus backup ${backup.name}:`, err.message);
