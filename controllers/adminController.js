@@ -4,6 +4,9 @@ const {
     History
 } = require('../models');
 const {
+    exec
+} = require('child_process');
+const {
     Op,
     fn,
     col
@@ -11,6 +14,7 @@ const {
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const unzipper = require('unzipper');
 const localVersion = require('../package.json').version;
 
 exports.dashboard = async (req, res) => {
@@ -21,12 +25,11 @@ exports.dashboard = async (req, res) => {
         // Jumlah permintaan API hari ini
         const apiRequestsToday = await History.count({
             where: {
-                userId,
-                createdAt: {
-                    [Op.gte]: new Date().setHours(0, 0, 0, 0)
-                },
                 source: {
-                    [Op.ne]: 'panel' // Atau ['panel', 'tester'] jika kamu gunakan itu
+                    [Op.ne]: 'panel'
+                },
+                createdAt: {
+                    [Op.gte]: new Date(new Date().setHours(0, 0, 0, 0))
                 }
             }
         });
@@ -41,7 +44,7 @@ exports.dashboard = async (req, res) => {
 
         // Ambil status sesi dari WhatsApp service
         const sessionStatuses = await whatsappService.getAllSessionStatus();
-        const connectedUsers = sessionStatuses.filter(s => s.status === 'CONNECTED').length;
+        const connectedUsers = sessionStatuses.filter(s => s.status === 'connected').length;
 
         // Ambil data jumlah pesan per hari (7 hari terakhir)
         const dailyMessages = await History.findAll({
@@ -214,3 +217,92 @@ exports.checkUpdate = async (req, res) => {
         });
     }
 };
+
+exports.installUpdate = async (req, res) => {
+    const zipUrl = 'https://github.com/kholif18/waserva/archive/refs/heads/main.zip';
+    const tmpDir = path.join(__dirname, '../tmp');
+    const zipPath = path.join(tmpDir, 'update.zip');
+    const extractPath = path.join(tmpDir, 'update');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupPath = path.join(__dirname, `../backup-${timestamp}`);
+
+    try {
+        // Buat folder sementara dan backup
+        fs.mkdirSync(tmpDir, {
+            recursive: true
+        });
+        fs.mkdirSync(backupPath, {
+            recursive: true
+        });
+
+        // Step 1: Backup sistem penting (manual list)
+        const itemsToBackup = ['controllers', 'models', 'routes', 'services', 'views', 'public', 'app.js'];
+        for (const item of itemsToBackup) {
+            const src = path.join(__dirname, '../', item);
+            const dest = path.join(backupPath, item);
+            if (fs.existsSync(src)) {
+                fs.cpSync(src, dest, {
+                    recursive: true
+                });
+            }
+        }
+
+        // Step 2: Download ZIP update dari GitHub
+        const writer = fs.createWriteStream(zipPath);
+        const response = await axios({
+            url: zipUrl,
+            method: 'GET',
+            responseType: 'stream'
+        });
+        response.data.pipe(writer);
+        await new Promise((resolve, reject) => {
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+        });
+
+        // Step 3: Ekstrak ZIP
+        await fs.createReadStream(zipPath)
+            .pipe(unzipper.Extract({
+                path: extractPath
+            }))
+            .promise();
+
+        const extractedFolder = fs.readdirSync(extractPath).find(f => f.startsWith('waserva-'));
+        if (!extractedFolder) throw new Error('Folder hasil ekstrak tidak ditemukan.');
+
+        const extractedPath = path.join(extractPath, extractedFolder);
+
+        // Step 4: Copy semua file kecuali .env, uploads, sessions
+        const execCopy = `rsync -a --exclude='.env' --exclude='public/uploads' --exclude='sessions' ${extractedPath}/ ./`;
+        await runCommand(execCopy);
+
+        // Step 5: Install dependency baru
+        await runCommand('npm install');
+
+        // Step 6: Jalankan migrasi DB
+        await runCommand('npx sequelize db:migrate');
+
+        req.flash('success', 'Update berhasil diinstall. Silakan restart server.');
+    } catch (err) {
+        console.error('❌ Gagal install update:', err);
+        req.flash('error', 'Gagal menginstall update. Lihat log server.');
+    } finally {
+        res.redirect('/admin/settings');
+    }
+};
+
+function runCommand(cmd) {
+    return new Promise((resolve, reject) => {
+        exec(cmd, {
+            cwd: path.resolve(__dirname, '../')
+        }, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`[exec error] ${cmd}`, error);
+                return reject(error);
+            }
+            if (stdout) console.log(stdout);
+            if (stderr) console.error(stderr);
+            resolve();
+        });
+    });
+}

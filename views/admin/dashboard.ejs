@@ -108,41 +108,44 @@
     <!-- SweetAlert Script -->
     <script src="/assets/js/chart.js"></script>
     <script>
-        const ctx = document.getElementById('messageChart').getContext('2d');
-        const messageChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: <%- chartLabels %>,
-                datasets: [{
-                label: 'Jumlah Pesan',
-                data: <%- chartData %>,
-                borderColor: '#007bff',
-                backgroundColor: 'rgba(0, 123, 255, 0.2)',
-                fill: true,
-                tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                    stepSize: 1
+        const canvas = document.getElementById('messageChart');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            const messageChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: <%- chartLabels %>,
+                    datasets: [{
+                    label: 'Jumlah Pesan',
+                    data: <%- chartData %>,
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                        stepSize: 1
+                        }
+                    }
+                    },
+                    plugins: {
+                    legend: {
+                        display: true
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
                     }
                 }
-                },
-                plugins: {
-                legend: {
-                    display: true
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false
-                }
-                }
-            }
-        });
+            });
+        }
 
         const pieLabels = <%- JSON.stringify(pieLabels) %>;
         const pieData = <%- JSON.stringify(pieData) %>;
@@ -157,27 +160,30 @@
 
         const backgroundColors = pieLabels.map(label => statusColorMap[label] || '#999');
 
-        const pieCtx = document.getElementById('statusPieChart').getContext('2d');
-        const statusPieChart = new Chart(pieCtx, {
-            type: 'pie',
-            data: {
-            labels: pieLabels,
-            datasets: [{
-                label: 'Distribusi Status',
-                data: pieData,
-                backgroundColor: backgroundColors,
-                borderWidth: 1
-            }]
-            },
-            options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                position: 'bottom'
+        const pieCanvas = document.getElementById('statusPieChart');
+        if (pieCanvas) {
+            const pieCtx = pieCanvas.getContext('2d');
+            const statusPieChart = new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                labels: pieLabels,
+                datasets: [{
+                    label: 'Distribusi Status',
+                    data: pieData,
+                    backgroundColor: backgroundColors,
+                    borderWidth: 1
+                }]
+                },
+                options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                    position: 'bottom'
+                    }
                 }
+                }
+            });
             }
-            }
-        });
 
         function confirmReset(userId) {
             Swal.fire({

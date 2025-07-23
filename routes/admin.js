@@ -27,7 +27,7 @@ router.post('/settings/save', isSystemAdmin, upload.single('logo'), adminSetting
 router.post('/settings/reset', isSystemAdmin, adminSettingController.resetToDefault);
 router.post('/settings/update-registration', isSystemAdmin, adminSettingController.updateRegistrationStatus);
 
-router.get('/admin/check-update', isSystemAdmin, adminController.checkUpdate);
-// router.post('/update', isSystemAdmin, adminController.processUpdate);
+router.get('/check-update', isSystemAdmin, adminController.checkUpdate);
+router.post('/update', isSystemAdmin, adminController.installUpdate);
 
 module.exports = router;

@@ -1,6 +1,8 @@
 const {
     AdminSetting
 } = require('../models');
+const path = require('path');
+const fs = require('fs');
 
 exports.viewSettings = async (req, res) => {
     try {
@@ -28,7 +30,26 @@ exports.saveSettings = async (req, res) => {
         if (req.body.smtp_pass) keys.push('smtp_pass');
 
         if (req.file) {
-            // Simpan path logo jika ada file yang di-upload
+            // Ambil logo lama dari DB
+            const currentLogo = await AdminSetting.findOne({
+                where: {
+                    key: 'logo'
+                }
+            });
+
+            // Hapus file lama jika bukan default
+            if (
+                currentLogo &&
+                currentLogo.value &&
+                currentLogo.value !== '/assets/img/logo.png'
+            ) {
+                const oldPath = path.join('public', currentLogo.value);
+                if (fs.existsSync(oldPath)) {
+                    fs.unlinkSync(oldPath);
+                }
+            }
+
+            // Simpan path logo baru
             const logoPath = `/uploads/${req.file.filename}`;
             keys.push('logo');
             req.body.logo = logoPath;
@@ -51,14 +72,34 @@ exports.saveSettings = async (req, res) => {
     }
 };
 
+
 exports.resetToDefault = async (req, res) => {
     try {
+        // Cari logo lama
+        const currentLogo = await AdminSetting.findOne({
+            where: {
+                key: 'logo'
+            }
+        });
+
+        // Hapus file jika bukan default
+        if (
+            currentLogo &&
+            currentLogo.value &&
+            currentLogo.value !== '/assets/img/logo.png'
+        ) {
+            const logoPath = path.join('public', currentLogo.value);
+            if (fs.existsSync(logoPath)) {
+                fs.unlinkSync(logoPath);
+            }
+        }
+
         // Hapus semua setting
         await AdminSetting.destroy({
             where: {}
         });
 
-        // Default values
+        // Isi default
         const defaultSettings = [{
                 key: 'logo',
                 value: '/assets/img/logo.png'

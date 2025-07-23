@@ -36,6 +36,7 @@
                     <tbody  id="logTableBody"></tbody>
                 </table>
             </div>
+            <div id="logSummary" class="mt-2 text-muted"><small></small></div>
         </div>
     </div>
 
@@ -54,6 +55,10 @@
 
             const res = await fetch(`/logs/data?limit=${limit}&offset=${offset}&level=${level}`);
             const data = await res.json();
+            // Update jumlah log
+            if (offset === 0) {
+                document.querySelector('#logSummary small').textContent = `Total logs: ${data.total}`;
+            }
 
             const tbody = document.querySelector('#logTableBody');
 
