@@ -8,8 +8,6 @@ function isFolderEmpty(folderPath) {
 }
 
 function validateSessionFolders() {
-    console.log('Menjalankan validasi folder session WhatsApp...');
-
     if (!fs.existsSync(sessionBasePath)) {
         console.warn('Folder sessions tidak ditemukan. Membuat...');
         fs.mkdirSync(sessionBasePath, {

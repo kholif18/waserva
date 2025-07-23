@@ -13,8 +13,6 @@ async function getUserSettings(userId) {
         'country_code' // kode negara default untuk normalisasi nomor
     ];
 
-    console.log('🔍 Mencari setting untuk userId:', userId);
-
     const rows = await Setting.findAll({
         where: {
             userId

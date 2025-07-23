@@ -99,8 +99,8 @@ exports.dashboard = async (req, res) => {
             apiRequestsToday,
             successRate,
             connectedUsers,
-            chartLabels: JSON.stringify(chartLabels),
-            chartData: JSON.stringify(chartData),
+            chartLabels,
+            chartData,
             pieLabels,
             pieData,
         });

@@ -46,8 +46,6 @@ exports.updateUserProfile = async (id, data) => {
         updateData.password = password;
     }
 
-    console.log('DATA YANG AKAN DIUPDATE:', updateData);
-
     const [updated] = await User.update(updateData, {
         where: {
             id

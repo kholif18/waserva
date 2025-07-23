@@ -84,22 +84,23 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Aktivitas Pesan (7 Hari Terakhir)</h5>
-                    <canvas id="messageChart" height="100"></canvas>
+                    <div id="messageChart" style="min-height: 350px;"></div>
                 </div>
             </div>
         </div>
         <div class="col-lg-4">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Distribusi Status Pesan</h5>
-                    <% if (pieLabels.length > 0 && pieData.some(val => val > 0)) { %>
-                        <canvas id="statusPieChart" height="100"></canvas>
-                    <% } else { %>
-                        <div class="text-center text-muted py-5">
-                            <i class="bi bi-pie-chart" style="font-size: 6rem;"></i><br>
-                            Tidak ada data status pesan untuk ditampilkan.
-                        </div>
-                    <% } %>
+                <h5 class="card-title">Distribusi Status Pesan</h5>
+
+                <% if (pieLabels.length > 0 && pieData.some(val => val > 0)) { %>
+                    <div id="statusPieChart" style="min-height: 400px;" class="echart"></div>
+                <% } else { %>
+                    <div class="text-center text-muted py-5">
+                    <i class="bi bi-pie-chart" style="font-size: 6rem;"></i><br>
+                    Tidak ada data status pesan untuk ditampilkan.
+                    </div>
+                <% } %>
                 </div>
             </div>
         </div>
@@ -108,45 +109,60 @@
     <!-- SweetAlert Script -->
     <script src="/assets/js/chart.js"></script>
     <script>
-        const canvas = document.getElementById('messageChart');
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            const messageChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: <%- chartLabels %>,
-                    datasets: [{
-                    label: 'Jumlah Pesan',
-                    data: <%- chartData %>,
-                    borderColor: '#007bff',
-                    backgroundColor: 'rgba(0, 123, 255, 0.2)',
-                    fill: true,
-                    tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                        stepSize: 1
-                        }
-                    }
-                    },
-                    plugins: {
-                    legend: {
-                        display: true
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false
-                    }
-                    }
-                }
-            });
-        }
+        document.addEventListener("DOMContentLoaded", function () {
+            const chartLabels = <%- JSON.stringify(chartLabels) %>;
+            const chartData = <%- JSON.stringify(chartData) %>;
 
+            const options = {
+            chart: {
+                type: 'area',
+                height: 350,
+                zoom: { enabled: false }
+            },
+            series: [{
+                name: "Jumlah Pesan",
+                data: chartData
+            }],
+            xaxis: {
+                categories: chartLabels,
+                title: { text: 'Tanggal' }
+            },
+            yaxis: {
+                title: { text: 'Jumlah Pesan' },
+                labels: {
+                formatter: val => parseInt(val)
+                }
+            },
+            stroke: {
+                curve: 'smooth',
+                width: 2
+            },
+            colors: ['#007bff'],
+            fill: {
+                type: "gradient",
+                gradient: {
+                shade: 'light',
+                type: "vertical",
+                shadeIntensity: 0.4,
+                gradientToColors: ["#007bff"],
+                inverseColors: false,
+                opacityFrom: 0.7,
+                opacityTo: 0.0,
+                stops: [0, 90, 100]
+                }
+            },
+            tooltip: {
+                x: { format: 'dd MMM yyyy' }
+            }
+            };
+
+            const chartEl = document.querySelector("#messageChart");
+            if (chartEl) {
+            const chart = new ApexCharts(chartEl, options);
+            chart.render();
+            }
+        });
+        
         const pieLabels = <%- JSON.stringify(pieLabels) %>;
         const pieData = <%- JSON.stringify(pieData) %>;
 
@@ -160,30 +176,44 @@
 
         const backgroundColors = pieLabels.map(label => statusColorMap[label] || '#999');
 
-        const pieCanvas = document.getElementById('statusPieChart');
-        if (pieCanvas) {
-            const pieCtx = pieCanvas.getContext('2d');
-            const statusPieChart = new Chart(pieCtx, {
-                type: 'pie',
-                data: {
-                labels: pieLabels,
-                datasets: [{
-                    label: 'Distribusi Status',
-                    data: pieData,
-                    backgroundColor: backgroundColors,
-                    borderWidth: 1
-                }]
+        document.addEventListener("DOMContentLoaded", () => {
+            const pieData = <%- JSON.stringify(pieData) %>;
+            const pieLabels = <%- JSON.stringify(pieLabels) %>;
+
+            if (pieLabels.length > 0 && pieData.some(val => val > 0)) {
+            const statusData = pieLabels.map((label, index) => ({
+                value: pieData[index],
+                name: label
+            }));
+
+            const chartDom = document.getElementById('statusPieChart');
+            if (chartDom) {
+                const myChart = echarts.init(chartDom);
+                myChart.setOption({
+                tooltip: {
+                    trigger: 'item'
                 },
-                options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                    position: 'bottom'
+                legend: {
+                    orient: 'vertical',
+                    left: 'left'
+                },
+                series: [{
+                    name: 'Status',
+                    type: 'pie',
+                    radius: '50%',
+                    data: statusData,
+                    emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
                     }
-                }
-                }
-            });
+                    }
+                }]
+                });
             }
+            }
+        });
 
         function confirmReset(userId) {
             Swal.fire({

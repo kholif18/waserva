@@ -70,8 +70,6 @@ exports.viewDashboard = async (req, res) => {
         // Pesan Hari Ini
         const startOfDay = dayjs().startOf('day').toDate();
         const endOfDay = dayjs().endOf('day').toDate();
-        console.log('Start of day:', startOfDay);
-        console.log('End of day:', endOfDay);
         const messagesToday = await History.findAll({
             where: {
                 userId,
@@ -83,7 +81,6 @@ exports.viewDashboard = async (req, res) => {
                 ['createdAt', 'DESC']
             ]
         });
-        console.log('Messages today:', messagesToday.length);
 
         const totalToday = messagesToday.length;
         const successToday = messagesToday.filter(msg => msg.status === 'success').length;
