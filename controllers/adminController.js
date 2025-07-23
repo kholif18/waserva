@@ -190,18 +190,18 @@ exports.viewAdminSettings = (req, res) => {
 
 exports.checkUpdate = async (req, res) => {
     try {
-        // Ambil file package.json dari GitHub (raw content)
-        const repoRawUrl = 'https://raw.githubusercontent.com/kholif18/waserva/main/package.json';
+        // Ambil file update-info.json dari GitHub (raw content)
+        const repoRawUrl = 'https://raw.githubusercontent.com/kholif18/waserva/main/update-info.json';
         const response = await axios.get(repoRawUrl);
-        const remotePackage = response.data;
-        const remoteVersion = remotePackage.version;
+        const remoteInfo = response.data;
+        const remoteVersion = remoteInfo.version;
 
         if (localVersion !== remoteVersion) {
             return res.json({
                 updateAvailable: true,
                 currentVersion: localVersion,
                 latestVersion: remoteVersion,
-                changelog: remotePackage.changelog || '- Tidak ada changelog tersedia -'
+                changelog: remoteInfo.changelog || '- Tidak ada changelog tersedia -'
             });
         } else {
             return res.json({

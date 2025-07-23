@@ -1,5 +1,5 @@
 {
   "name": "waserva",
   "version": "1.0.1",
-  "changelog": "- Monitoring sesi WhatsApp\n- Update Checker\n- fix error setting admin"
+  "changelog": "- Monitoring sesi WhatsApp\n- Update Checker\n- Fix error setting admin\n- Fix update Checker"
 }
