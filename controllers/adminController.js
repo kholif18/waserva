@@ -16,7 +16,6 @@ const path = require('path');
 const axios = require('axios');
 const unzipper = require('unzipper');
 const semver = require('semver');
-const localVersion = require('../utils/version');
 
 exports.dashboard = async (req, res) => {
     try {
@@ -191,6 +190,8 @@ exports.viewAdminSettings = (req, res) => {
 
 exports.checkUpdate = async (req, res) => {
     try {
+        const localVersion = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'))).version;
+
         const repoRawUrl = 'https://raw.githubusercontent.com/kholif18/waserva/main/update-info.json';
         const response = await axios.get(repoRawUrl);
         const remoteInfo = response.data;
@@ -282,9 +283,18 @@ exports.installUpdate = async (req, res) => {
         // Step 6: Jalankan migrasi DB
         await runCommand('npx sequelize db:migrate');
 
+        // Hapus backup setelah semua langkah berhasil
+        if (fs.existsSync(backupPath)) {
+            fs.rmSync(backupPath, {
+                recursive: true,
+                force: true
+            });
+            console.log('🧹 Folder backup berhasil dihapus:', backupPath);
+        }
+
         req.flash('success', 'Update berhasil diinstall. Silakan restart server.');
     } catch (err) {
-        console.error('❌ Gagal install update:', err);
+        console.error('Gagal install update:', err);
         req.flash('error', 'Gagal menginstall update. Lihat log server.');
     } finally {
         // Hapus file update.zip dan folder hasil ekstrak
