@@ -184,28 +184,6 @@
       });
     });
   
-    document.getElementById('resetBtn')?.addEventListener('click', () => {
-      Swal.fire({
-        title: 'Reset to Default?',
-        text: 'Seluruh pengaturan akan dikembalikan ke default!',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Ya, Reset',
-        cancelButtonText: 'Batal'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          document.getElementById('resetForm').submit();
-        }
-      });
-    });
-  
-    document.addEventListener('DOMContentLoaded', function () {
-      document.querySelectorAll('.toast').forEach(toastEl => {
-        const toast = new bootstrap.Toast(toastEl);
-        toast.show();
-      });
-    });
-    
     document.getElementById('checkUpdateBtn').addEventListener('click', function () {
       const spinner = document.getElementById('checkSpinner');
       const resultContainer = document.getElementById('updateResult');
@@ -220,7 +198,7 @@
           'Accept': 'application/json',
           'X-Requested-With': 'XMLHttpRequest'
         },
-        credentials: 'same-origin'
+        credentials: 'same-origin' // WAJIB agar session ikut
       })
         .then(res => {
           if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -230,65 +208,54 @@
           spinner.classList.add('d-none');
 
           if (data.updateAvailable) {
-            Swal.fire({
-              title: 'Update tersedia!',
-              html: `
-                <p><strong>Versi saat ini:</strong> <code>${data.currentVersion}</code><br>
-                <strong>Versi terbaru:</strong> <code>${data.latestVersion}</code></p>
-                ${data.changelog ? `<pre style="text-align:left;max-height:300px;overflow:auto">${data.changelog}</pre>` : ''}
-              `,
-              icon: 'warning',
-              showCancelButton: true,
-              confirmButtonText: '<i class="bi bi-download"></i> Install Update',
-              cancelButtonText: 'Batal',
-              reverseButtons: true,
-              allowOutsideClick: false,
-              preConfirm: () => {
-                return fetch('/admin/update', {
-                  method: 'POST',
-                  headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                  },
-                  credentials: 'same-origin'
-                })
-                  .then(res => {
-                    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-                    return res.json();
-                  })
-                  .catch(err => {
-                    Swal.showValidationMessage(`Gagal melakukan update: ${err.message}`);
-                  });
-              }
-            }).then(result => {
-              if (result.isConfirmed && result.value) {
+            resultContainer.innerHTML = `
+              <div class="alert alert-warning">
+                <strong>Update tersedia!</strong><br>
+                Versi saat ini: <code>${data.currentVersion}</code><br>
+                Versi terbaru: <code>${data.latestVersion}</code><br>
+                ${data.changelog ? `<pre>${data.changelog}</pre>` : ''}
+                <form method="POST" action="/admin/update" id="updateForm" class="mt-3">
+                  <button type="submit" class="btn btn-success">
+                    <i class="bi bi-download"></i> Install Update
+                  </button>
+                </form>
+              </div>
+            `;
+
+            // ✅ Tambahkan event listener setelah HTML dimasukkan
+            const updateForm = document.getElementById('updateForm');
+            if (updateForm) {
+              updateForm.addEventListener('submit', function (e) {
+                e.preventDefault(); // Cegah submit langsung
+
                 Swal.fire({
-                  icon: 'success',
-                  title: 'Update berhasil diinstal',
-                  html: `Versi saat ini sekarang: <code>${result.value.version || 'unknown'}</code>`,
-                  confirmButtonText: 'OK'
+                  title: 'Yakin ingin menginstall update?',
+                  text: 'Proses ini akan menggantikan file sistem yang lama.',
+                  icon: 'warning',
+                  showCancelButton: true,
+                  confirmButtonText: 'Ya, install sekarang!',
+                  cancelButtonText: 'Batal'
+                }).then((result) => {
+                  if (result.isConfirmed) {
+                    updateForm.submit(); // Submit jika disetujui
+                  }
                 });
-              }
-            });
+              });
+            }
+
           } else {
-            Swal.fire({
-              icon: 'success',
-              title: 'Sudah versi terbaru',
-              html: `Aplikasi sudah menggunakan versi terbaru: <code>${data.currentVersion}</code>`,
-              confirmButtonText: 'OK'
-            });
+            resultContainer.innerHTML = `
+              <div class="alert alert-success">
+                Aplikasi sudah menggunakan versi terbaru: <code>${data.currentVersion}</code>
+              </div>
+            `;
           }
         })
         .catch(err => {
           spinner.classList.add('d-none');
+          resultContainer.innerHTML = `<div class="alert alert-danger">Terjadi kesalahan saat memeriksa update.<br><small>${err.message}</small></div>`;
           console.error('Update check error:', err);
-          Swal.fire({
-            icon: 'error',
-            title: 'Gagal memeriksa update',
-            text: err.message
-          });
         });
-    });
-
+    });  
   </script>
 </section>
