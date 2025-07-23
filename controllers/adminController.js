@@ -15,7 +15,8 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const unzipper = require('unzipper');
-const localVersion = require('../package.json').version;
+const semver = require('semver');
+const localVersion = require('../utils/version');
 
 exports.dashboard = async (req, res) => {
     try {
@@ -190,13 +191,12 @@ exports.viewAdminSettings = (req, res) => {
 
 exports.checkUpdate = async (req, res) => {
     try {
-        // Ambil file update-info.json dari GitHub (raw content)
         const repoRawUrl = 'https://raw.githubusercontent.com/kholif18/waserva/main/update-info.json';
         const response = await axios.get(repoRawUrl);
         const remoteInfo = response.data;
         const remoteVersion = remoteInfo.version;
 
-        if (localVersion !== remoteVersion) {
+        if (semver.gt(remoteVersion, localVersion)) {
             return res.json({
                 updateAvailable: true,
                 currentVersion: localVersion,
@@ -287,6 +287,17 @@ exports.installUpdate = async (req, res) => {
         console.error('❌ Gagal install update:', err);
         req.flash('error', 'Gagal menginstall update. Lihat log server.');
     } finally {
+        // Hapus file update.zip dan folder hasil ekstrak
+        try {
+            if (fs.existsSync(zipPath)) fs.unlinkSync(zipPath);
+            if (fs.existsSync(extractPath)) fs.rmSync(extractPath, {
+                recursive: true,
+                force: true
+            });
+            console.log('🧹 File update.zip dan folder sementara berhasil dihapus.');
+        } catch (cleanupErr) {
+            console.warn('⚠️ Gagal membersihkan file sementara:', cleanupErr.message);
+        }
         res.redirect('/admin/settings');
     }
 };

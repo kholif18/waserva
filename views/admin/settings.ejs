@@ -222,7 +222,7 @@
               </div>
             `;
 
-            // ✅ Tambahkan event listener setelah HTML dimasukkan
+            // Tambahkan event listener setelah HTML dimasukkan
             const updateForm = document.getElementById('updateForm');
             if (updateForm) {
               updateForm.addEventListener('submit', function (e) {
@@ -237,7 +237,18 @@
                   cancelButtonText: 'Batal'
                 }).then((result) => {
                   if (result.isConfirmed) {
-                    updateForm.submit(); // Submit jika disetujui
+                    // Tampilkan proses update
+                    Swal.fire({
+                      title: 'Menginstall Update...',
+                      html: 'Proses ini bisa memakan waktu beberapa detik.<br><br><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>',
+                      allowOutsideClick: false,
+                      showConfirmButton: false,
+                      backdrop: true,
+                      didOpen: () => {
+                        // Submit form secara manual setelah spinner muncul
+                        updateForm.submit();
+                      }
+                    });
                   }
                 });
               });

@@ -1,0 +1,95 @@
+<section>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Monitoring Sesi WhatsApp</h5>
+        
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                    <th>Nama</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% sessionList.forEach(session => { %>
+                    <tr>
+                        <td><%= session.name %></td>
+                        <td><%= session.username %></td>
+                        <td><%= session.email %></td>
+                        <td><%= session.role %></td>
+                        <td>
+                            <span class="badge 
+                                <%= session.status === 'connected' ? 'bg-success' : 
+                                    session.status === 'qr' ? 'bg-warning' :
+                                    session.status === 'auth_failure' || session.status === 'disconnected' ? 'bg-danger' :
+                                    'bg-secondary' %>">
+                                <%= session.status %>
+                            </span>
+                        </td>
+                        <td>
+                            <button 
+                                class="btn btn-danger btn-sm" 
+                                onclick="confirmReset('<%= session.id %>')"
+                            >Reset Session</button>
+
+                            <button 
+                                class="btn btn-warning btn-sm" 
+                                onclick="confirmForceLogout('<%= session.id %>')"
+                            >Force Logout</button>
+                        </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+            <!-- Include pagination -->
+            <%- include('../partials/pagination') %>
+        </div>
+    </div>
+
+    <script>
+        function confirmReset(userId) {
+            Swal.fire({
+                title: 'Reset Session?',
+                text: 'Session user akan dihapus dan harus login ulang.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Ya, reset!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/admin/sessions/${userId}/reset`;
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        }
+
+        function confirmForceLogout(userId) {
+            Swal.fire({
+                title: 'Force Logout?',
+                text: 'User akan dipaksa logout dari sesi WhatsApp.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f0ad4e',
+                confirmButtonText: 'Ya, logout!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/admin/sessions/${userId}/force-logout`;
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        }
+        </script>
+
+</section>
