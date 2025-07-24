@@ -257,7 +257,13 @@ exports.checkUpdate = async (req, res) => {
 };
 
 exports.installUpdate = async (req, res) => {
-    const zipUrl = 'https://github.com/kholif18/waserva/archive/refs/heads/main.zip';
+    const latestRelease = await axios.get('https://api.github.com/repos/kholif18/waserva/releases/latest', {
+        headers: {
+            'User-Agent': 'waserva-updater'
+        }
+    });
+
+    const zipUrl = latestRelease.data.zipball_url;
     const tmpDir = path.join(__dirname, '../tmp');
     const zipPath = path.join(tmpDir, 'update.zip');
     const extractPath = path.join(tmpDir, 'update');
