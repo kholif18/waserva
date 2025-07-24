@@ -3,16 +3,38 @@ version: '3.8'
 services:
   waserva:
     build: .
+    container_name: waserva
+    restart: unless-stopped
     ports:
       - "3000:3000"
     volumes:
       - .:/app
+      - /app/node_modules
       - ./sessions:/app/sessions
     env_file:
       - .env
+    depends_on:
+      - mariadb
     networks:
-      - network_app
+      - waserva_net
+
+  mariadb:
+    image: mariadb:11
+    container_name: mariadb
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: waserva
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - waserva_net
+
+volumes:
+  db_data:
 
 networks:
-  network_app:
-    external: true
+  waserva_net:
+    driver: bridge
