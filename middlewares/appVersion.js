@@ -1,29 +1,27 @@
 const fs = require('fs');
 const path = require('path');
 
-let currentVersion = readVersion();
-
-function readVersion() {
+function readVersionFromPackage() {
     try {
-        const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json')));
+        const pkgPath = path.join(__dirname, '..', 'package.json');
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
         return pkg.version;
     } catch (err) {
-        console.error('Gagal membaca versi dari package.json:', err);
+        console.error('Gagal membaca package.json:', err);
         return 'unknown';
     }
 }
 
-function setAppVersion(app) {
-    app.locals.appVersion = currentVersion;
+function appVersion(req, res, next) {
+    res.app.locals.appVersion = readVersionFromPackage();
+    next();
 }
 
 function refreshAppVersion(app) {
-    currentVersion = readVersion();
-    app.locals.appVersion = currentVersion;
-    console.log('[refreshAppVersion] Versi aplikasi diperbarui:', currentVersion);
+    app.locals.appVersion = readVersionFromPackage();
 }
 
 module.exports = {
-    setAppVersion,
-    refreshAppVersion,
+    appVersion,
+    refreshAppVersion
 };

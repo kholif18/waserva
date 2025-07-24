@@ -15,7 +15,7 @@ const {
 } = require('socket.io');
 const whatsappService = require('./services/whatsappService');
 const {
-  setAppVersion
+  appVersion
 } = require('./middlewares/appVersion');
 const {
   sequelize,
@@ -133,7 +133,7 @@ app.set('layout', 'layout');
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
-setAppVersion(app);
+app.use(appVersion);
 
 // Routes
 const authRoutes = require('./routes/auth');
