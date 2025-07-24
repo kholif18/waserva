@@ -314,6 +314,12 @@ exports.installUpdate = async (req, res) => {
         const execCopy = `rsync -a --exclude='.env' --exclude='public/uploads' --exclude='sessions' ${extractedPath}/ ./`;
         await runCommand(execCopy);
 
+        // Step 4.5: Pastikan package.json terganti (karena rsync bisa melewatkan file ini)
+        fs.copyFileSync(
+            path.join(extractedPath, 'package.json'),
+            path.join(__dirname, '../package.json')
+        );
+
         // Step 5: Install dependency baru
         await runCommand('npm install');
 
@@ -325,6 +331,8 @@ exports.installUpdate = async (req, res) => {
             refreshAppVersion
         } = require('../middlewares/appVersion');
         refreshAppVersion();
+
+        console.log('Versi setelah refresh:', res.locals?.appVersion);
 
         // Hapus backup setelah semua langkah berhasil
         if (fs.existsSync(backupPath)) {
