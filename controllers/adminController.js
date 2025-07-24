@@ -315,9 +315,10 @@ exports.installUpdate = async (req, res) => {
             }))
             .promise();
 
-        const extractedFolder = fs.readdirSync(extractPath).find(f => f.startsWith('waserva-'));
-        if (!extractedFolder) throw new Error('Folder hasil ekstrak tidak ditemukan.');
+        const extractedList = fs.readdirSync(extractPath);
+        if (extractedList.length === 0) throw new Error('Folder hasil ekstrak kosong');
 
+        const extractedFolder = extractedList[0];
         const extractedPath = path.join(extractPath, extractedFolder);
 
         // Step 4: Copy semua file kecuali .env, uploads, sessions
