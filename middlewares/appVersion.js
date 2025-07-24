@@ -21,7 +21,6 @@ function appVersion(req, res, next) {
 function refreshAppVersion(app) {
     const version = readVersionFromPackage();
     app.locals.appVersion = version;
-    console.log('✅ Versi aplikasi di-refresh:', version);
 }
 
 module.exports = {

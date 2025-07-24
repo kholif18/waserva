@@ -324,7 +324,6 @@ exports.installUpdate = async (req, res) => {
             refreshAppVersion
         } = require('../middlewares/appVersion');
         refreshAppVersion(req.app);
-        console.log('🆕 Versi aplikasi setelah refresh:', req.app.locals.appVersion);
 
         // Step 5: Install dependency baru
         await runCommand('npm install');
