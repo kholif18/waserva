@@ -319,6 +319,12 @@ exports.installUpdate = async (req, res) => {
 
         // Step 6: Jalankan migrasi DB
         await runCommand('npx sequelize db:migrate');
+        
+        // Step 6.5: Perbarui versi di memori
+        const {
+            refreshAppVersion
+        } = require('../middlewares/appVersion');
+        refreshAppVersion();
 
         // Hapus backup setelah semua langkah berhasil
         if (fs.existsSync(backupPath)) {
