@@ -320,20 +320,17 @@ exports.installUpdate = async (req, res) => {
             path.join(__dirname, '../package.json')
         );
 
+        const {
+            refreshAppVersion
+        } = require('../middlewares/appVersion');
+        refreshAppVersion(req.app);
+
         // Step 5: Install dependency baru
         await runCommand('npm install');
 
         // Step 6: Jalankan migrasi DB
         await runCommand('npx sequelize db:migrate');
         
-        // Step 6.5: Perbarui versi di memori
-        const {
-            refreshAppVersion
-        } = require('../middlewares/appVersion');
-        refreshAppVersion();
-
-        console.log('Versi setelah refresh:', res.locals?.appVersion);
-
         // Hapus backup setelah semua langkah berhasil
         if (fs.existsSync(backupPath)) {
             fs.rmSync(backupPath, {
