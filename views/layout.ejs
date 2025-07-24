@@ -64,6 +64,55 @@
   <script src="/assets/vendor/php-email-form/validate.js"></script>
   <script src="/assets/js/main.js"></script>
   <script>
+    const input = document.getElementById('quickSearchInput');
+    const resultsBox = document.getElementById('quickSearchResults');
+
+    let debounceTimeout;
+
+    input.addEventListener('input', function () {
+      const query = input.value.trim();
+
+      clearTimeout(debounceTimeout);
+
+      if (query.length < 3) {
+        resultsBox.classList.add('d-none');
+        return;
+      }
+
+      debounceTimeout = setTimeout(() => {
+        fetch(`/quick-search?q=${encodeURIComponent(query)}`)
+          .then(res => res.json())
+          .then(data => {
+            resultsBox.innerHTML = '';
+            if (data.length === 0) {
+              resultsBox.classList.remove('d-none');
+              resultsBox.innerHTML = '<span class="dropdown-item text-muted">No results</span>';
+              return;
+            }
+
+            data.forEach(item => {
+              const el = document.createElement('a');
+              el.href = item.link;
+              el.className = 'dropdown-item d-flex align-items-center gap-2';
+              el.innerHTML = `<i class="bi ${item.icon}"></i> ${item.label}`;
+              resultsBox.appendChild(el);
+            });
+
+            resultsBox.classList.remove('d-none');
+          })
+          .catch(err => {
+            console.error('Search error:', err);
+          });
+      }, 300); // debounce 300ms
+    });
+
+    // Tutup dropdown saat blur
+    input.addEventListener('blur', () => {
+      setTimeout(() => {
+        resultsBox.classList.add('d-none');
+      }, 200);
+    });
+    
     (function () {
       let idleTime = 0;
       const maxIdleMinutes = 15; // Waktu idle dalam menit

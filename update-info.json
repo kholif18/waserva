@@ -1,5 +1,5 @@
 {
   "name": "waserva",
-  "version": "1.0.1",
-  "changelog": "- Monitoring sesi WhatsApp\n- Update Checker\n- Fix error setting admin\n- Fix update Checker\n- Fix Delete Backup Directory"
+  "version": "1.0.2",
+  "changelog": "v1.0.2 – Quick Search & Admin Improvements (2025-07-23)\n\nFitur Baru:\n- Quick Search (Global Search) di header:\n  - to:628xxxxxxx – Cari riwayat pesan berdasarkan nomor tujuan (user biasa)\n  - msg:halo – Cari pesan mengandung teks tertentu (user biasa)\n  - log:Success / log:Failed – Akses log status (semua pengguna)\n  - api:nama aplikasi – Cari API client berdasarkan appName (user biasa)\n  - sessions / wa-session / client – Monitoring sesi WhatsApp (admin)\n  - nama / email / username – Navigasi ke sesi user tertentu (admin)\n\nKontrol Akses:\n- User hanya dapat akses to:, msg:, api:, dan log:\n- Admin hanya dapat akses log:, sessions, dan pencarian user\n\nPerbaikan:\n- Membersihkan folder backup-* setelah update berhasil\n- Versi aplikasi dibaca langsung dari package.json (tanpa cache)\n- Route quick-search diperbaiki agar bisa diakses semua user login\n"
 }

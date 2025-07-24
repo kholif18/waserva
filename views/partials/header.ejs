@@ -10,9 +10,10 @@
     <%# End Logo %>
 
     <div class="search-bar">
-      <form class="search-form d-flex align-items-center" method="POST" action="#">
-        <input type="text" name="query" placeholder="Search" title="Enter search keyword">
+      <form id="quickSearchForm" class="search-form d-flex align-items-center" role="search" autocomplete="off">
+        <input id="quickSearchInput" type="text" name="query" placeholder="Quick search..." aria-label="Search" title="Enter search keyword">
         <button type="submit" title="Search"><i class="bi bi-search"></i></button>
+        <div id="quickSearchResults" class="dropdown-menu show shadow position-absolute w-75 d-none" style="top: 100%; z-index: 9999;"></div>
       </form>
     </div>
     <%# End Search Bar %>

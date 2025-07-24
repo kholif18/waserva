@@ -48,12 +48,12 @@
                 </thead>
                 <tbody>
                     <% history.forEach((item, index) => { %>
-                        <tr>
-                        <td><%= item.datetime %></td>
-                        <td><%= item.to.length > 16 ? item.to.substring(0, 16) + '…' : item.to %></td>
-                        <td><%= item.source || 'panel' %></td>
-                        <td><%= item.message %></td>
-                        <td><%= item.status %></td>
+                        <tr class="<%= highlightId && item.id == highlightId ? 'table-warning' : '' %>">
+                            <td><%= item.datetime %></td>
+                            <td><%= item.to.length > 16 ? item.to.substring(0, 16) + '…' : item.to %></td>
+                            <td><%= item.source || 'panel' %></td>
+                            <td><%= item.message %></td>
+                            <td><%= item.status %></td>
                         </tr>
                     <% }) %>
                 </tbody>

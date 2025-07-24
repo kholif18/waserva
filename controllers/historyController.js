@@ -8,6 +8,7 @@ const paginate = require('../utils/pagination');
 
 exports.index = async (req, res) => {
     const userId = req.session.user.id;
+    const highlightId = parseInt(req.query.highlight) || null;
 
     const {
         fromDate,
@@ -96,6 +97,7 @@ exports.index = async (req, res) => {
     }
 
     const history = rows.map(h => ({
+        id: h.id,
         datetime: formatDateTime(h.createdAt),
         to: h.phone,
         message: formatMessage(h.message, h.type),
@@ -109,6 +111,7 @@ exports.index = async (req, res) => {
         history,
         activePage: 'history',
         pagination,
+        highlightId,
         req
     });
 };

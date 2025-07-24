@@ -10,6 +10,7 @@ const {
 // Controllers
 const dashboardController = require('../controllers/dashboardController');
 const helpController = require('../controllers/helpController');
+const quickSearchController = require('../controllers/quickSearchController');
 
 // Routes
 const authRoutes = require('./auth');
@@ -28,6 +29,7 @@ const adminRoutes = require('./admin');
 // --------------------
 router.use('/', authRoutes); // Login, Register
 router.use('/api/whatsapp', apiWhatsappRoutes); // Public API Token Access
+router.get('/quick-search', isAuthenticated, quickSearchController.search);
 
 // --------------------
 // ADMIN ROUTES (require login & admin role)

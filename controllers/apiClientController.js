@@ -6,6 +6,10 @@ const {
 const logService = require('../services/logService');
 const crypto = require('crypto');
 const dayjs = require('dayjs');
+const {
+    Op
+} = require('sequelize');
+
 
 // Helper: convert app name to slug format
 function slugify(str) {
@@ -19,10 +23,22 @@ function slugify(str) {
 // Display list of API Clients
 exports.index = async (req, res) => {
     try {
+        const {
+            search
+        } = req.query;
+
+        const where = {
+            userId: req.session.user.id
+        };
+
+        if (search && search.trim()) {
+            where.appName = {
+                [Op.like]: `%${search.trim()}%`
+            };
+        }
+
         const clients = await ApiClient.findAll({
-            where: {
-                userId: req.session.user.id
-            }
+            where
         });
 
         const user = await User.findByPk(req.session.user.id);
@@ -39,7 +55,8 @@ exports.index = async (req, res) => {
             title: 'API Clients',
             activePage: 'api-clients',
             user,
-            clients: formattedClients
+            clients: formattedClients,
+            search: search || '' // kirim ke template
         });
     } catch (err) {
         console.error(err);
@@ -47,6 +64,7 @@ exports.index = async (req, res) => {
         res.redirect('/');
     }
 };
+
 
 // Add new API Client
 exports.add = async (req, res) => {

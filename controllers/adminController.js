@@ -115,27 +115,64 @@ exports.viewSessionList = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const perPage = parseInt(req.query.per_page) || 10;
+        const search = req.query.search || '';
+        const highlightUserId = req.query.highlight ? parseInt(req.query.highlight) : null;
 
+        // Ambil semua sesi dari service
         const sessionListRaw = await whatsappService.getAllSessionStatus();
-        const totalItems = sessionListRaw.length;
 
+        // Ambil ID semua user dari session
+        const userIds = sessionListRaw.map(s => s.id).filter(id => !isNaN(id));
+
+        const users = await User.findAll({
+            where: {
+                id: userIds
+            }
+        });
+
+        // Gabungkan info user ke sesi
+        let sessionList = sessionListRaw.map(session => {
+            const user = users.find(u => u.id === session.id);
+            return {
+                ...session,
+                name: user?.name || 'Unknown',
+                email: user?.email || '',
+                username: user?.username || '',
+                highlight: highlightUserId === session.id
+            };
+        });
+
+        // Filter pencarian (opsional)
+        if (search.length > 0) {
+            const searchLower = search.toLowerCase();
+            sessionList = sessionList.filter(s =>
+                s.name.toLowerCase().includes(searchLower) ||
+                s.email.toLowerCase().includes(searchLower) ||
+                s.username.toLowerCase().includes(searchLower)
+            );
+        }
+
+        // Pagination
+        const totalItems = sessionList.length;
         const totalPages = Math.ceil(totalItems / perPage);
         const offset = (page - 1) * perPage;
-
-        const sessionList = sessionListRaw.slice(offset, offset + perPage);
+        const paginatedSessions = sessionList.slice(offset, offset + perPage);
 
         res.render('admin/sessions', {
             title: 'Monitoring Sesi WhatsApp',
             activePage: 'admin-sessions',
-            sessionList,
+            sessionList: paginatedSessions,
             pagination: {
                 currentPage: page,
                 totalPages,
                 totalItems,
                 perPage
             },
-            req // diperlukan oleh partial paginate
+            highlightUserId,
+            search,
+            req
         });
+
     } catch (err) {
         console.error('Gagal memuat sesi:', err);
         req.flash('error', 'Gagal memuat data sesi');

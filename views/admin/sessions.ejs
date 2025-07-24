@@ -2,7 +2,12 @@
     <div class="card">
         <div class="card-body">
             <h5 class="card-title">Monitoring Sesi WhatsApp</h5>
-        
+
+            <form method="GET" class="mb-3 d-flex">
+                <input type="text" name="search" class="form-control me-2" placeholder="Cari nama/email/username" value="<%= search || '' %>">
+                <button type="submit" class="btn btn-outline-primary">Search</button>
+            </form>
+
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -16,7 +21,7 @@
                 </thead>
                 <tbody>
                     <% sessionList.forEach(session => { %>
-                    <tr>
+                    <tr class="<%= session.highlight ? 'table-warning' : '' %>">
                         <td><%= session.name %></td>
                         <td><%= session.username %></td>
                         <td><%= session.email %></td>
@@ -46,7 +51,7 @@
                 </tbody>
             </table>
             <!-- Include pagination -->
-            <%- include('../partials/pagination') %>
+            <%- include('../partials/pagination', { pagination: pagination, baseUrl: '/admin/sessions', query: { search: search } }) %>
         </div>
     </div>
 
