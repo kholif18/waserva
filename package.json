@@ -3,9 +3,7 @@
   "version": "1.0.2",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "copy-assets": "node scripts/copy-swal.js",
-    "postinstall": "npm run copy-assets"
+    "start": "node app.js"
   },
   "dependencies": {
     "axios": "^1.10.0",
