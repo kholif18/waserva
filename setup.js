@@ -20,9 +20,6 @@ try {
     execSync('npm install', {
         stdio: 'inherit'
     });
-    execSync('npm run copy-assets', {
-        stdio: 'inherit'
-    });
     execSync('npx sequelize db:migrate', {
         stdio: 'inherit'
     });
