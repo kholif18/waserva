@@ -17,13 +17,11 @@
 - **Antrian (queue)** dan **retry otomatis**
 - **Rate limit** & timeout per user
 - Halaman **dashboard statistik**
-- Riwayat pesan & log seperti MikroTik (auto-prune)
 - **Manajemen API Client** (register, token, status aktif)
 - Panel tester internal API Client
 - **Real-time QR Code** via socket.io
 - **Backup & restore session otomatis**
 - Sistem **update otomatis** via GitHub Releases
-- 🇮🇩 Full Bahasa Indonesia di panel
 
 ---
 
