@@ -229,17 +229,21 @@ exports.checkUpdate = async (req, res) => {
     try {
         const localVersion = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'))).version;
 
-        const repoRawUrl = 'https://raw.githubusercontent.com/kholif18/waserva/main/update-info.json';
-        const response = await axios.get(repoRawUrl);
-        const remoteInfo = response.data;
-        const remoteVersion = remoteInfo.version;
+        const release = await axios.get('https://api.github.com/repos/kholif18/waserva/releases/latest', {
+            headers: {
+                'User-Agent': 'waserva-updater'
+            }
+        });
+
+        const remoteVersion = release.data.tag_name.replace(/^v/, ''); // hapus "v" di depan jika ada
+        const changelog = release.data.body || '- Tidak ada changelog tersedia -';
 
         if (semver.gt(remoteVersion, localVersion)) {
             return res.json({
                 updateAvailable: true,
                 currentVersion: localVersion,
                 latestVersion: remoteVersion,
-                changelog: remoteInfo.changelog || '- Tidak ada changelog tersedia -'
+                changelog
             });
         } else {
             return res.json({
@@ -251,7 +255,7 @@ exports.checkUpdate = async (req, res) => {
     } catch (err) {
         console.error('Gagal memeriksa update:', err);
         return res.status(500).json({
-            error: 'Gagal memeriksa update dari GitHub'
+            error: 'Gagal memeriksa update dari GitHub Releases'
         });
     }
 };
