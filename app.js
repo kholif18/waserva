@@ -9,6 +9,8 @@ const fs = require('fs');
 const {
   logAdminOnly
 } = require('./services/logService');
+const appUrl = new URL(process.env.APP_URL || 'http://localhost:3000');
+const isHttps = appUrl.protocol === 'https:';
 const ADMIN_USER_ID = process.env.ADMIN_USER_ID || 1;
 const {
   Server
@@ -75,11 +77,11 @@ app.use(express.json());
 
 // Session & Flash
 app.use(session({
-  secret: 'rahasia-super-aman',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: isHttps,
     httpOnly: true
   }
 }));
