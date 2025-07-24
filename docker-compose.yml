@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  waserva:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - ./sessions:/app/sessions
+    env_file:
+      - .env
+    depends_on:
+      - mariadb
+
+  mariadb:
+    image: mariadb:10.5
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: waserva
+      MYSQL_USER: waserva
+      MYSQL_PASSWORD: waserva
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+
+volumes:
+  mariadb-data:
