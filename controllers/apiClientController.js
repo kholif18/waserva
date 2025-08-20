@@ -85,7 +85,7 @@ exports.add = async (req, res) => {
             return res.redirect('/api-clients');
         }
 
-        const token = crypto.randomBytes(32).toString('base64');
+        const token = crypto.randomBytes(32).toString('base64url');
         const slugAppName = slugify(app_name);
 
         await ApiClient.create({
@@ -161,7 +161,7 @@ exports.regenerate = async (req, res) => {
             return res.redirect('/api-clients');
         }
 
-        const newToken = crypto.randomBytes(32).toString('base64');
+        const newToken = crypto.randomBytes(32).toString('base64url');
 
         await client.update({
             apiToken: newToken

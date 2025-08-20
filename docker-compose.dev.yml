@@ -2,8 +2,10 @@ version: '3.8'
 
 services:
   waserva:
-    build: .
-    container_name: waserva
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: waserva-dev
     restart: unless-stopped
     ports:
       - "3025:3000"

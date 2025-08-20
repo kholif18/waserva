@@ -2,6 +2,9 @@ const multer = require('multer');
 const upload = multer({
     storage: multer.memoryStorage()
 });
+const {
+    ApiClient
+} = require('../models');
 const whatsappService = require('../services/whatsappService');
 
 exports.sendText = async (req, res) => {
@@ -20,6 +23,55 @@ exports.sendText = async (req, res) => {
 
     const result = await whatsappService.sendText(userId, phone, message, source);
     res.status(result.success ? 200 : 500).json(result);
+};
+
+exports.sendTextForPhpNuxBill = async (req, res) => {
+    try {
+        const {
+            to,
+            msg,
+            secret
+        } = req.query;
+
+        // Validasi parameter
+        if (!to || !msg || !secret) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required params: to, msg, or secret'
+            });
+        }
+
+        // Cari apiClient berdasarkan secret
+        const apiClient = await ApiClient.findOne({
+            where: {
+                apiToken: secret,
+                isActive: true
+            }
+        });
+
+        if (!apiClient) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid secret'
+            });
+        }
+
+        const userId = apiClient.userId;
+        const source = `phpnuxbill-${apiClient.appName}`;
+
+        // Kirim pesan
+        const result = await whatsappService.sendText(userId, to, msg, source);
+
+        res.status(result.success ? 200 : 500).json(result);
+
+    } catch (err) {
+        console.error('sendTextForPhpNuxBill error:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Internal error',
+            detail: err.message
+        });
+    }
 };
 
 exports.sendMediaByUrl = async (req, res) => {
