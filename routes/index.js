@@ -28,7 +28,7 @@ const adminRoutes = require('./admin');
 // PUBLIC ROUTES
 // --------------------
 router.use('/', authRoutes); // Login, Register
-router.use('/api/whatsapp', apiWhatsappRoutes); // Public API Token Access
+router.use('/api', apiWhatsappRoutes); // Public API Token Access
 router.get('/quick-search', isAuthenticated, quickSearchController.search);
 
 // --------------------

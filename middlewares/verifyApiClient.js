@@ -42,6 +42,7 @@ module.exports = async function verifyApiClient(req, res, next) {
         // simpan data client untuk controller
         req.apiClient = apiClient;
         req.userId = apiClient.userId;
+
         next();
 
     } catch (err) {
