@@ -5,41 +5,49 @@ const {
 
 module.exports = async function verifyApiClient(req, res, next) {
     try {
+        // ambil dari header
         const token = req.headers['x-api-token'];
 
-        if (!token) {
+        // ambil dari body atau query
+        const client = req.body.client || req.query.client;
+        const secret = req.body.secret || req.query.secret;
+
+        let apiClient = null;
+
+        if (token) {
+            // Mode lama: x-api-token
+            apiClient = await ApiClient.findOne({
+                where: {
+                    apiToken: token,
+                    isActive: true
+                }
+            });
+        } else if (client && secret) {
+            // Mode baru: client + secret
+            apiClient = await ApiClient.findOne({
+                where: {
+                    appName: client,
+                    apiToken: secret,
+                    isActive: true
+                }
+            });
+        }
+
+        if (!apiClient) {
             return res.status(401).json({
-                error: 'Missing API token. Please provide x-api-token header.'
+                error: 'Invalid API credentials. Provide x-api-token header or client+secret.'
             });
         }
 
-        const client = await ApiClient.findOne({
-            where: {
-                apiToken: token,
-                isActive: true
-            },
-            include: [{
-                model: User,
-                as: 'User', // tambahkan ini
-                attributes: ['id', 'username', 'email']
-            }]
-        });
-
-        if (!client) {
-            return res.status(403).json({
-                error: 'Invalid or inactive API token.'
-            });
-        }
-
-        req.apiClient = client;
-        req.sessionName = client.sessionName;
-        req.userId = client.userId;
-
+        // simpan data client untuk controller
+        req.apiClient = apiClient;
+        req.userId = apiClient.userId;
         next();
+
     } catch (err) {
-        console.error('API token verification error:', err);
+        console.error('verifyApiClient error:', err);
         res.status(500).json({
-            error: 'Internal server error during API token verification'
+            error: 'Internal server error'
         });
     }
 };
